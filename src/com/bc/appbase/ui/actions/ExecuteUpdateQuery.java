@@ -28,7 +28,7 @@ public class ExecuteUpdateQuery extends AbstractExecuteQuery {
     @Override
     public Integer execute(App app, String sql, Class resultType) {
         
-        final EntityManager em = app.getEntityManager();
+        final EntityManager em = app.getEntityManager(resultType);
         final Query query = em.createNativeQuery(sql, Integer.class);
         final int UPDATE_COUNT = query.executeUpdate();
         

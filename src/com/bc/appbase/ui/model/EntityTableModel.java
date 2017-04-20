@@ -24,6 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.table.AbstractTableModel;
 import com.bc.appbase.App;
+import com.bc.appcore.util.Selection;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Mar 3, 2017 12:57:02 PM
@@ -97,12 +98,23 @@ public class EntityTableModel <T> extends AbstractTableModel {
     @Override
     public void setValueAt(Object value, int rowIndex, int columnIndex) {
         if(logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Setting [{0}:{1}] = {1}", new Object[]{rowIndex, columnIndex, value});
+            logger.log(Level.FINE, "Setting [{0}:{1}] = {2}", new Object[]{rowIndex, columnIndex, value});
         }
         try{
+            
             final T entity = resultsToDisplay.get(rowIndex);
+            
+            logger.log(Level.FINER, "Entity: {0}", entity);
+            
+            if(value instanceof Selection) {
+                value = ((Selection)value).getValue();
+                logger.log(Level.FINE, "Value from selection: {0}", value);
+            }
+            
             this.resultModel.set(entity, rowIndex, columnIndex, value);
+            
             this.fireTableCellUpdated(rowIndex, columnIndex);
+            
         }catch(RuntimeException e) {
             log(e, "Error setting value at ["+rowIndex+':'+columnIndex+"] to: "+value);
         }

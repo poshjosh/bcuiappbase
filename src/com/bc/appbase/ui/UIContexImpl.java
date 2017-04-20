@@ -60,6 +60,7 @@ import com.bc.table.cellui.TableCellUIState;
 import com.bc.table.cellui.TableCellUIStateImpl;
 import com.bc.table.cellui.TableCellUIUpdaterImpl;
 import java.text.DateFormat;
+import java.util.Map;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 10, 2017 4:51:32 PM
@@ -162,11 +163,12 @@ public class UIContexImpl implements UIContext {
         final TableCellDisplayValue cellDisplayValue = new CellDisplayValue(resultModel, app.getDateFormat());
         
         final int height = 40;
+        final int fontSize = EntryPanel.deriveFontSize(height);
         final ComponentModel componentModel = new DtbTableCellComponentModel(
                 app,
                 app.get(SelectionContext.class),
                 app.get(DateFromUIBuilder.class), app.get(DateUIUpdater.class),
-                new Font(Font.MONOSPACED, Font.PLAIN, EntryPanel.deriveFontSize(height)), 
+                new Font(Font.MONOSPACED, Font.PLAIN, fontSize), 
                 -1, height
         );
         final TableCellUIFactory cellUIFactory = new DefaultTableCellUIFactory(
@@ -292,7 +294,7 @@ public class UIContexImpl implements UIContext {
 
     @Override
     public <T> SearchResultsFrame createSearchResultsFrame(
-            SearchContext searchContext, SearchResults<T> searchResults, 
+            SearchContext<T> searchContext, SearchResults<T> searchResults, 
             String ID, int firstPage, int numberOfPages,
             String msg, boolean emptyResultsAllowed) {
         
@@ -328,10 +330,10 @@ public class UIContexImpl implements UIContext {
         
         return resultsFrame;
     }
-    
+
     @Override
     public <T> Boolean loadSearchResultsUI(
-            SearchResultsPanel resultsPanel, SearchContext searchContext, SearchResults<T> searchResults, 
+            SearchResultsPanel resultsPanel, SearchContext<T> searchContext, SearchResults<T> searchResults, 
             String ID, int firstPage, int numberOfPages, boolean emptyResultsAllowed) {
 
         if(logger.isLoggable(Level.FINE)) {
@@ -363,7 +365,7 @@ public class UIContexImpl implements UIContext {
         return output;
     }
     private <T> Boolean doLoadSearchResultsUI(
-           SearchResultsPanel resultsPanel, SearchContext searchContext, SearchResults<T> searchResults, 
+           SearchResultsPanel resultsPanel, SearchContext<T> searchContext, SearchResults<T> searchResults, 
             String ID, int firstPage, int numberOfPages, boolean emptyResultsAllowed) {
         final Boolean output;
         if(!emptyResultsAllowed && searchResults.getSize() == 0) {
@@ -383,18 +385,53 @@ public class UIContexImpl implements UIContext {
         
         return output;
     }
+    
+    public String getSearchResultsWindowKey(String key) {
+        return key + ".searchResultsWindow";
+    }
+    
+    public String getSearchResultsKey(String key) {
+        return key + ".searchResults";
+    }
 
     @Override
     public SearchResults getLinkedSearchResults(JComponent component) {
-        final Container topAncestor = component.getTopLevelAncestor();
-        final String key = topAncestor == null ? component.getName() : topAncestor.getName();
-        final SearchResults searchResults = (SearchResults)app.getAttributes().get(key);
+        final SearchResults searchResults = this.getLinkedSearchResults(component, null);
         if(searchResults == null) {
             throw new SearchResultsNotFoundException();
         }
         return searchResults;
     }
 
+    @Override
+    public SearchResults getLinkedSearchResults(JComponent component, SearchResults outputIfNone) {
+        final Container topAncestor = component.getTopLevelAncestor();
+        final String KEY = topAncestor == null ? component.getName() : topAncestor.getName();
+        final SearchResults searchResults = (SearchResults)app.getAttributes().get(this.getSearchResultsKey(KEY));
+        if(searchResults == null) {
+            return outputIfNone;
+        }
+        return searchResults;
+    }
+
+    @Override
+    public SearchResults getLinkedSearchResults(String KEY) {
+        final SearchResults searchResults = this.getLinkedSearchResults(KEY, null);
+        if(searchResults == null) {
+            throw new SearchResultsNotFoundException();
+        }
+        return searchResults;
+    }
+
+    @Override
+    public SearchResults getLinkedSearchResults(String KEY, SearchResults outputIfNone) {
+        final SearchResults searchResults = (SearchResults)app.getAttributes().get(this.getSearchResultsKey(KEY));
+        if(searchResults == null) {
+            return outputIfNone;
+        }
+        return searchResults;
+    }
+    
     @Override
     public void linkWindowToSearchResults(Window window, SearchResults searchResults, String KEY) {
         
@@ -413,10 +450,12 @@ public class UIContexImpl implements UIContext {
         }
     }
     private void doLinkWindowToSearchResults(Window window, SearchResults searchResults, String KEY) {
-        
-        app.getAttributes().put(KEY, searchResults);
-        
-        window.setName(KEY);
+       
+        final Map<String, Object> attrs = app.getAttributes();
+        attrs.put(this.getSearchResultsKey(KEY), searchResults);
+        attrs.put(this.getSearchResultsWindowKey(KEY), window);
+       
+        window.setName(KEY); 
 
         window.addWindowListener(new WindowAdapter(){
             @Override
@@ -427,16 +466,17 @@ public class UIContexImpl implements UIContext {
                         ((AutoCloseable)searchResults).close();
                     }
                 }catch(Exception exception) {
-                    Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Error closing dao", exception);
+                    logger.log(Level.WARNING, "Error closing dao", exception);
                 }finally{
-                    app.getAttributes().remove(KEY);
+                    attrs.remove(UIContexImpl.this.getSearchResultsKey(KEY));
+                    attrs.remove(UIContexImpl.this.getSearchResultsWindowKey(KEY));
                 }
             }
         });
     }
 
     @Override
-    public void loadSearchResults(
+    public void loadSearchResultsPages(
             SearchResultsPanel resultsPanel, SearchContext searchContext,
             int firstPage, int numberOfPages) {
         if(SwingUtilities.isEventDispatchThread()) {
@@ -455,7 +495,7 @@ public class UIContexImpl implements UIContext {
             SearchResultsPanel resultsPanel, SearchContext searchContext,
             int firstPage, int numberOfPages) {
 
-        final SearchResults searchResults = app.getUIContext().getLinkedSearchResults(resultsPanel);
+        final SearchResults searchResults = this.getLinkedSearchResults(resultsPanel);
 
         this.loadSearchResults(resultsPanel, searchContext, searchResults, firstPage, numberOfPages);
     }
@@ -471,7 +511,7 @@ public class UIContexImpl implements UIContext {
         if(firstPage == 0 && searchResults.getSize() == 0) {
             
             final TableModel tableModel = this.getTableModel(searchResults, resultModel, firstPage, 0);
-
+            
             table.setModel(tableModel);
             
         }else{
@@ -497,7 +537,7 @@ public class UIContexImpl implements UIContext {
     @Override
     public void updateTableUI(JTable table, TableModel tableModel, ResultModel resultModel) {
         
-        table.setModel(tableModel);
+        table.setModel(tableModel); 
         
         final TableCellUIUpdater tableUIUpdater = this.getTableCellUIUpdater(resultModel);
 

@@ -28,7 +28,6 @@ import com.bc.appbase.ui.MainFrame;
 import com.bc.appbase.ui.UIContext;
 import com.bc.appbase.ui.actions.ActionCommands;
 import com.bc.appcore.AbstractAppCore;
-import com.bc.appcore.util.Settings;
 import com.bc.config.Config;
 import com.bc.config.ConfigService;
 import com.bc.jpa.JpaContext;
@@ -36,6 +35,7 @@ import com.bc.jpa.sync.JpaSync;
 import com.bc.jpa.sync.SlaveUpdates;
 import java.awt.Container;
 import java.nio.file.Path;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -47,9 +47,9 @@ public abstract class AbstractApp extends AbstractAppCore implements App {
     
     private UIContext ui;
 
-    public AbstractApp(Path workingDir, ConfigService configService, Config config, Settings settings,
+    public AbstractApp(Path workingDir, ConfigService configService, Config config, Properties settingsConfig,
             JpaContext jpaContext, ExecutorService dataOutputService, SlaveUpdates slaveUpdates, JpaSync jpaSync) {
-        super(workingDir, configService, config, settings, jpaContext, dataOutputService, slaveUpdates, jpaSync);
+        super(workingDir, configService, config, settingsConfig, jpaContext, dataOutputService, slaveUpdates, jpaSync);
     }
     
     @Override
@@ -66,7 +66,7 @@ public abstract class AbstractApp extends AbstractAppCore implements App {
     
     @Override
     public <T> SearchContext<T> getSearchContext(Class<T> entityType) {
-        ResultModel<T> resultModel = this.getResultModel(entityType, null);
+        final ResultModel<T> resultModel = this.getResultModel(entityType, null);
         return new SearchContextImpl<>(this, Objects.requireNonNull(resultModel), 20, true);
     }
 

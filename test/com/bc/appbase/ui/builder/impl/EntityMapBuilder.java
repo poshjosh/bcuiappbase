@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.persistence.GeneratedValue;
@@ -51,7 +52,7 @@ public class EntityMapBuilder<E> {
     
     private final Map<Class, Set<String>> columnTypes;
     
-    public EntityMapBuilder(JpaContext jpaContext) {
+    public EntityMapBuilder(JpaContext jpaContext, Predicate<String> persistenceUnitNameTest) {
         this.jpaContext = Objects.requireNonNull(jpaContext);
         this.parsedEntityTypes = new HashSet();
         this.columnTypes = new HashMap(32, 0.75f);
@@ -59,6 +60,9 @@ public class EntityMapBuilder<E> {
         final String [] puNames = metaData.getPersistenceUnitNames();
         this.entityTypes = new HashSet();
         for(String puName : puNames) {
+            if(!persistenceUnitNameTest.test(puName)) {
+                continue;
+            }
             Class [] puClasses = metaData.getEntityClasses(puName);
             this.entityTypes.addAll(Arrays.asList(puClasses));
         }

@@ -34,6 +34,8 @@ import java.util.logging.Logger;
  * @author Josh
  */
 public class SearchResultsPanel extends javax.swing.JPanel {
+    
+    private transient static final Logger logger = Logger.getLogger(SearchResultsPanel.class.getName());
 
     public SearchResultsPanel() {
         this(null);
@@ -75,18 +77,11 @@ public class SearchResultsPanel extends javax.swing.JPanel {
 
     public void reset(App app, Class entityType) {
         
-        final SearchResults searchResults = app.getUIContext().getLinkedSearchResults(this);
+        final SearchResults searchResults = app.getUIContext().getLinkedSearchResults(this, null);
         
         if(searchResults != null) {
-            this.reset(app, entityType, searchResults);
+            this.reset(app, app.getSearchContext(entityType), searchResults);
         }
-    }
-    
-    public <T> void reset(App app, Class<T> entityType, SearchResults<T> searchResults) {
-        
-        final SearchContext<T> searchContext = app.getSearchContext(entityType);
-        
-        this.reset(app, searchContext, searchResults);
     }
     
     public void reset(App app, SearchContext searchContext, SearchResults searchResults) {
@@ -95,15 +90,22 @@ public class SearchResultsPanel extends javax.swing.JPanel {
         Objects.requireNonNull(searchContext);
         Objects.requireNonNull(searchResults);
         
-        final String KEY = this.getName();
+        final String KEY = this.getTopLevelAncestor().getName();
         
-        final SearchResults previous = (SearchResults)app.getAttributes().get(KEY);
+        final SearchResults previous = (SearchResults)app.getUIContext().getLinkedSearchResults(KEY, null);
+        
+        if(logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "Previous search results. Name: {0} ", previous);
+        }
+        
         if(previous instanceof AutoCloseable && !previous.equals(searchResults)) {
+           
+            logger.log(Level.FINE, "Closing previous search results: {0}", previous);
+            
             try{
                 ((AutoCloseable)previous).close();
             }catch(Exception e) {
-                Logger.getLogger(this.getClass().getName()).log(
-                        Level.WARNING, "Error closing search results table", e);
+                logger.log(Level.WARNING, "Error closing search results: "+previous, e);
             }
         }
         

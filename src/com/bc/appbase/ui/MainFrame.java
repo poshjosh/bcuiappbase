@@ -53,6 +53,7 @@ public class MainFrame extends javax.swing.JFrame {
     private final javax.swing.JMenuItem viewTableAsExcelMenuItem;
     private final javax.swing.JMenu toolsMenu;
     private final javax.swing.JMenuItem settingsMenuItem;
+    private final javax.swing.JMenuItem refreshMenuItem;
     
     private final com.bc.appbase.ui.SearchResultsPanel searchResultsPanel;
     private final Font menuFont;
@@ -85,6 +86,7 @@ public class MainFrame extends javax.swing.JFrame {
         helpMenu = new javax.swing.JMenu();
         aboutMenuItem = new javax.swing.JMenuItem();
         settingsMenuItem = new javax.swing.JMenuItem(); 
+        refreshMenuItem = new javax.swing.JMenuItem();
         
         initComponents();
         
@@ -114,8 +116,9 @@ public class MainFrame extends javax.swing.JFrame {
         
         this.getExitMenuItem().setActionCommand(ActionCommands.EXIT_UI_THEN_EXIT);
         this.getSettingsMenuItem().setActionCommand(ActionCommands.DISPLAY_SETTINGS_UI);
+        this.getRefreshMenuItem().setActionCommand(ActionCommands.RELOAD_MAIN_RESULTS);
         app.getUIContext().addActionListeners(this, 
-                this.getExitMenuItem(), this.getSettingsMenuItem());
+                this.getExitMenuItem(), this.getSettingsMenuItem(), this.getRefreshMenuItem());
         
         this.getViewTableAsExcelMenuItem().setActionCommand(ActionCommands.VIEW_TABLE_AS_EXCEL);
         this.getSaveAsMenuItem().setActionCommand(ActionCommands.SAVE_TABLE_AS);
@@ -138,9 +141,15 @@ public class MainFrame extends javax.swing.JFrame {
 
     public void reset(App app) {
         this.reset(app, this.topPanel);
+        this.reset(app, this.searchResultsPanel);
     }
     
     public void reset(App app, JPanel topPanel) { }
+    
+    public void reset(App app, SearchResultsPanel resultsPanel) { 
+        
+        resultsPanel.reset(app, null);
+    }
 
     @SuppressWarnings("unchecked")
     public void initComponents() {
@@ -169,6 +178,10 @@ public class MainFrame extends javax.swing.JFrame {
         saveAsMenuItem.setDisplayedMnemonicIndex(5);
         fileMenu.add(saveAsMenuItem);
 
+        refreshMenuItem.setFont(menuFont);
+        refreshMenuItem.setText("Refresh");
+        fileMenu.add(refreshMenuItem);
+        
         printMenuItem.setFont(this.menuFont);
         printMenuItem.setText("Print");
         fileMenu.add(printMenuItem);
@@ -178,7 +191,7 @@ public class MainFrame extends javax.swing.JFrame {
         exitMenuItem.setText("Exit");
         fileMenu.add(exitMenuItem);
 
-//        menuBar.add(fileMenu);
+        menuBar.add(fileMenu);
 
         toolsMenu.setMnemonic('t');
         toolsMenu.setText("Tools");
@@ -190,7 +203,6 @@ public class MainFrame extends javax.swing.JFrame {
         toolsMenu.add(settingsMenuItem);
         
         menuBar.add(toolsMenu); 
-        menuBar.add(fileMenu);
         
         helpMenu.setMnemonic('h');
         helpMenu.setText("Help");
@@ -254,6 +266,10 @@ public class MainFrame extends javax.swing.JFrame {
 //    public JMenuBar getMenuBar() {
 //        return menuBar;
 //    }
+
+    public JMenuItem getRefreshMenuItem() {
+        return refreshMenuItem;
+    }
 
     public JMenuItem getSaveAsMenuItem() {
         return saveAsMenuItem;

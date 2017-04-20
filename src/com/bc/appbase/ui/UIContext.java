@@ -80,19 +80,25 @@ public interface UIContext {
     JFrame getMainFrame();
     
     <T> SearchResultsFrame createSearchResultsFrame(
-            SearchContext searchContext, SearchResults<T> searchResults, 
+            SearchContext<T> searchContext, SearchResults<T> searchResults, 
             String ID, int firstPage, int numberOfPages,
             String msg, boolean emptyResultsAllowed);
     
     <T> Boolean loadSearchResultsUI(
-            SearchResultsPanel resultsPanel, SearchContext searchContext, SearchResults<T> searchResults, 
+            SearchResultsPanel resultsPanel, SearchContext<T> searchContext, SearchResults<T> searchResults, 
             String ID, int firstPage, int numberOfPages, boolean emptyResultsAllowed);
     
-    void linkWindowToSearchResults(Window window, SearchResults searchResults, String KEY);
+    void linkWindowToSearchResults(Window window, SearchResults searchResults, String key);
     
     SearchResults getLinkedSearchResults(JComponent component);
     
-    void loadSearchResults(SearchResultsPanel resultsPanel, SearchContext searchContext, int firstPage, int numberOfPages);    
+    SearchResults getLinkedSearchResults(JComponent component, SearchResults outputIfNone);
+    
+    SearchResults getLinkedSearchResults(String key);
+    
+    SearchResults getLinkedSearchResults(String key, SearchResults outputIfNone);
+    
+    void loadSearchResultsPages(SearchResultsPanel resultsPanel, SearchContext searchContext, int firstPage, int numberOfPages);    
     
     void showErrorMessage(Throwable t, Object message);
     

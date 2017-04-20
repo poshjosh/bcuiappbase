@@ -17,6 +17,7 @@
 package com.bc.appbase.ui.builder.impl;
 
 import com.bc.appbase.ui.VerticalLayout;
+import com.bc.appcore.TypeProvider;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -108,7 +110,18 @@ public class UIBuilderFromMap extends AbstractUIBuilder<Map, Container> {
                 }
             }else{
                 
-                final Class type = this.getTypeProvider().getType(name, value, value==null?null:value.getClass());
+                final TypeProvider tp = this.getTypeProvider();
+                
+                final Class type = tp.getType(name, value, value==null?null:value.getClass());
+
+                if(logger.isLoggable(Level.FINER)) {
+                    logger.log(Level.FINER, "{0}#getType({1}, {2}, {3}) = {4}", 
+                            new Object[]{tp.getClass().getName(), name, value,
+                                value==null?null:value.getClass().getName(), 
+                                type==null?null:type.getName()});
+                }
+                
+                Objects.requireNonNull(type);
                 
                 entryUI = this.getEntryUIProvider().getEntryUI(type, name, value);
             }

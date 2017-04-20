@@ -45,7 +45,7 @@ public class PreviousResult implements Action<App, JTable> {
         
         final int previousPage = searchResults.getPageNumber() - 1;
         
-        app.getUIContext().loadSearchResults((SearchResultsPanel)parent, app.getSearchContext(null), previousPage, 1);
+        app.getUIContext().loadSearchResultsPages((SearchResultsPanel)parent, app.getSearchContext(null), previousPage, 1);
         
         return table;
     }

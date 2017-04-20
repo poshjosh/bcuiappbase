@@ -45,7 +45,7 @@ public class LastResult implements Action<App, JTable> {
         
         final int lastPage = searchResults.getPageCount() - 1;
 
-        app.getUIContext().loadSearchResults((SearchResultsPanel)parent, app.getSearchContext(null), lastPage, 1);
+        app.getUIContext().loadSearchResultsPages((SearchResultsPanel)parent, app.getSearchContext(null), lastPage, 1);
         
         return table;
     }

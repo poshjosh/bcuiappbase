@@ -25,6 +25,7 @@ import com.bc.appcore.parameter.ParameterNotFoundException;
 import com.bc.appcore.util.Expirable;
 import com.bc.appcore.util.Settings;
 import java.awt.Window;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -65,7 +66,6 @@ public class UpdateSettingsFromUI implements Action<App, Boolean> {
 
             final Settings settings = (Settings)uiSourceExpirable.get();
             
-            
             final Map update = (Map)app.get(FromUIBuilder.class)
 //                    .componentModel(app.get(ComponentModel.class))
                     .context(app)
@@ -75,15 +75,16 @@ public class UpdateSettingsFromUI implements Action<App, Boolean> {
                     .target(new LinkedHashMap())
                     .build();
             
-            logger.log(Level.FINE, "Update: {0}", update);
+            logger.log(Level.FINE, "Updates: {0}", update);
 
             if(!update.isEmpty()) {
                 
-                settings.putAll(update);
+                settings.updateAll(update);
             
                 app.getUIContext().showSuccessMessage("SUCCESS");
             }
-            
+        }catch(IOException e) {    
+            throw new TaskExecutionException("Failed to save changes", e);
         }finally{
             window.dispose();
         }

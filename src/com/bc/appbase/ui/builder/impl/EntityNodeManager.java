@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,13 +43,16 @@ public class EntityNodeManager implements FromUIBuilderImpl.NodeManager {
 
     private final Map<Class, Set<String>> entityColumnNames;
 
-    public EntityNodeManager(App app) { 
+    public EntityNodeManager(App app, Predicate<String> persistenceUnitNameTest) { 
         this.app = Objects.requireNonNull(app);
         this.entityUpdaters = new HashMap<>();
         this.entityColumnNames = new HashMap<>(32, 0.75f);
         final JpaMetaData metaData = app.getJpaContext().getMetaData();
         final String [] puNames = metaData.getPersistenceUnitNames();
         for(String puName : puNames) {
+            if(!persistenceUnitNameTest.test(puName)) {
+                continue;
+            }
             final Class [] puClasses = metaData.getEntityClasses(puName);
             for(Class puClass : puClasses) {
                 final Set<String> columnNames = new HashSet(Arrays.asList(metaData.getColumnNames(puClass)));

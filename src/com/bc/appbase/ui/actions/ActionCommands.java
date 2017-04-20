@@ -25,6 +25,10 @@ public interface ActionCommands extends ActionCommandsBase {
     
     String EXIT_UI_THEN_EXIT = ExitUIThenExit.class.getName();
     
+    String REFRESH_ALL_RESULTS = RefreshAllResults.class.getName();
+    
+    String RELOAD_MAIN_RESULTS = ReloadMainResults.class.getName();
+
     String REFRESH_RESULTS = RefreshResults.class.getName();
 
     String VIEW_TABLE_AS_EXCEL = ViewTableAsExcel.class.getName();
@@ -50,6 +54,8 @@ public interface ActionCommands extends ActionCommandsBase {
     String PROMPT_SELECT_EXCEL_FILE = PromptSelectExcelFile.class.getName();
     
     String PROMPT_SELECT_SHEETNAME = PromptSelectSheetName.class.getName();
+    
+    String OPEN_FILE = OpenFile.class.getName();
     
     String DISPLAY_OPEN_FOLDER_DIALOG = DisplayOpenFolderDialog.class.getName();
     

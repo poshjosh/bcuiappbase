@@ -17,10 +17,9 @@
 package com.bc.appbase.ui.builder.impl;
 
 import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.Components;
 import java.awt.Component;
 import java.awt.Container;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Level;
@@ -84,11 +83,14 @@ public class FromUIBuilderImpl<O> extends AbstractFromUIBuilder<Container, O> {
         
         logger.log(level, "Keys: {0}", keys);
         
+        final Components components = new Components();
+        
+        
         for(Object key : keys) {
             
             final String name = key.toString();
             
-            final Component childUI = this.findChild(ui, name);
+            final Component childUI = components.findFirstChild(ui, (Component c) -> name.equals(c.getName()), null);
             
             if(childUI == null) {
                 logger.log(level, "No UI component found for: {0}", key);
@@ -127,58 +129,5 @@ public class FromUIBuilderImpl<O> extends AbstractFromUIBuilder<Container, O> {
         }
         
         return target;
-    }
-    
-    public int getComponentCount(Component c) {
-        int output;
-        if(c instanceof Container) {
-            output = ((Container)c).getComponentCount();
-        }else{
-            output = -1;
-        }
-        return output;
-    }
-    
-    public Set<String> getChildNames(Component component) {
-        final Set<String> childNames;
-        if(component instanceof Container) {
-            final Container container = (Container)component;
-            final int count = container.getComponentCount();
-            childNames = new HashSet(count);
-            for(int i=0; i<count; i++) {
-                final String childName = container.getComponent(i).getName();
-                if(childName != null) {
-                    childNames.add(childName);
-                }
-            }
-        }else{
-            childNames = Collections.EMPTY_SET;
-        }
-        return childNames;
-    }
-
-    public Component findChild(Component c, String name) {
-        return this.findChildNamed(c, name, false);
-    }
-    
-    public Component findChildNamed(Component c, String name, boolean inclusive) {
-        Component output;
-        if(inclusive && name.equals(c.getName())) {
-            output = c;
-        }else{
-            output = null;
-            if(c instanceof Container) {
-                final Container parent = (Container)c;
-                final int count = parent.getComponentCount();
-                for(int i=0; i<count; i++) {
-                    Component child = parent.getComponent(i);
-                    output = this.findChildNamed(child, name, true);
-                    if(output != null) {
-                        break;
-                    }
-                }
-            }
-        }
-        return output;
     }
 }

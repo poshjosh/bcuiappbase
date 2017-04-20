@@ -46,7 +46,7 @@ public class ExecuteSelectQuery extends AbstractExecuteQuery {
         final StringBuilder msg = new StringBuilder();
         msg.append("<html>");
         msg.append(sql);
-        
+
         final int SIZE = searchResults.getSize();
         final String RESULTS_STR = SIZE == 1 ? "result" : "results";
         msg.append("<br/><tt>").append(SIZE).append(' ').append(RESULTS_STR).append("</tt>");
@@ -79,11 +79,9 @@ public class ExecuteSelectQuery extends AbstractExecuteQuery {
     
     private SearchResults getSearchResults(App app, String KEY, String sql, Class resultType) {
         
-        SearchResults searchResults = (SearchResults)app.getAttributes().get(KEY);
-        
+        SearchResults searchResults = app.getUIContext().getLinkedSearchResults(KEY, null);
         if(searchResults == null) {
-            searchResults = app.getSearchContext(null).getSearchResults(sql, resultType);
-            app.getAttributes().put(KEY, searchResults);
+            searchResults = app.getSearchContext(resultType).getSearchResults(sql);
         }
         
         return searchResults;

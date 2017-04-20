@@ -8,7 +8,7 @@ import com.bc.appbase.ui.builder.UIBuilder;
 import com.bc.appcore.TypeProvider;
 import com.bc.appbase.ui.builder.impl.EntryUIProviderImpl;
 import com.bc.appbase.ui.builder.impl.UIBuilderFromMap;
-import com.bc.appcore.jpa.Selection;
+import com.bc.appcore.util.Selection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;

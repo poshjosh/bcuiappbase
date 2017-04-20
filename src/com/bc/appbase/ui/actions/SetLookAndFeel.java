@@ -27,24 +27,33 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.bc.appbase.App;
+import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.parameter.ParameterException;
+import com.bc.appcore.parameter.ParameterNotFoundException;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 19, 2017 8:28:24 PM
  */
 public class SetLookAndFeel implements Action<App, Boolean> {
 
+    public static final String LOOK_AND_FEEL_NAME = "lookAndFeelName";
+    
     @Override
     public Boolean execute(App app, Map<String, Object> params) 
-            throws com.bc.appcore.actions.TaskExecutionException {
+            throws ParameterException, TaskExecutionException {
         
-        final String lookAndFeelName = (String)params.get(ParamNames.LOOK_AND_FEEL);
+        final String lookAndFeelName = (String)params.get(LOOK_AND_FEEL_NAME);
+        
+        if(lookAndFeelName == null) {
+            throw new ParameterNotFoundException(LOOK_AND_FEEL_NAME);
+        }
         
         /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Windows".equals(info.getName())) {
+                if (lookAndFeelName.equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }

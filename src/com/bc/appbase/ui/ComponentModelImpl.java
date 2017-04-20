@@ -17,9 +17,9 @@
 package com.bc.appbase.ui;
 
 import com.bc.appbase.App;
-import com.bc.appcore.jpa.Selection;
+import com.bc.appcore.util.Selection;
 import com.bc.appcore.jpa.SelectionContext;
-import com.bc.appcore.jpa.SelectionImpl;
+import com.bc.appcore.util.SelectionImpl;
 import com.bc.table.cellui.TableCellTextArea;
 import com.bc.table.cellui.TestSubClass;
 import java.awt.Component;

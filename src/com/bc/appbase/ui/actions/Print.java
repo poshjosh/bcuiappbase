@@ -33,20 +33,28 @@ import javax.swing.SwingUtilities;
 import java.awt.event.WindowEvent;
 import javax.print.attribute.standard.MediaSizeName;
 import com.bc.appbase.App;
+import com.bc.appcore.actions.TaskExecutionException;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 17, 2017 10:41:10 AM
  */
 public class Print implements Action<App, Boolean> {
-
+    
     @Override
     public Boolean execute(App app, Map<String, Object> params) 
-            throws com.bc.appcore.actions.TaskExecutionException {
+            throws TaskExecutionException {
         
-        final DialogManager.PageSelection pageSelection = 
-                app.get(DialogManager.class).promptSelectPages("Which pages do you want to print?");
-        
+        final Class resultType = (Class)params.get(ParamNames.RESULT_TYPE);
         final JTable table = (JTable)params.get(JTable.class.getName());
+        final SearchResults searchResults = app.getUIContext().getLinkedSearchResults(table);
+        
+        final DialogManager.PageSelection pageSelection;
+        if(searchResults.getPageCount() > 1) {
+            pageSelection = 
+                    app.get(DialogManager.class).promptSelectPages("Which pages do you want to print?");
+        }else{
+            pageSelection = DialogManager.PageSelection.CurrentPage;
+        }
         
         final Boolean success;
         
@@ -57,11 +65,10 @@ public class Print implements Action<App, Boolean> {
                 case CurrentPage:
                     success = this.print(app, table); break;
                 case AllPages:
-                    final SearchResults searchResults = app.getUIContext().getLinkedSearchResults(table);
-                    this.print(app, searchResults, 0, searchResults.getPageCount());
+                    this.print(app, resultType, searchResults, 0, searchResults.getPageCount());
                     success = Boolean.TRUE; break;
                 case FirstPage:
-                    this.print(app, app.getUIContext().getLinkedSearchResults(table), 0, 1);
+                    this.print(app, resultType, searchResults, 0, 1);
                     success = Boolean.TRUE; break;
                 default: 
                     app.getUIContext().showErrorMessage(null, "Only printing of 'Current Page' or 'All Pages' or 'First Page' is supported for now");
@@ -102,14 +109,14 @@ public class Print implements Action<App, Boolean> {
         return Boolean.FALSE;
     }
     
-    public void print(App app, SearchResults searchResults, int pageNum, int numberOfPages) {
+    public void print(App app, Class resultType, SearchResults searchResults, int pageNum, int numberOfPages) {
         
         if(SwingUtilities.isEventDispatchThread()) {
-            this.doPrint(app, searchResults, pageNum, numberOfPages);
+            this.doPrint(app, resultType, searchResults, pageNum, numberOfPages);
         }else{
             java.awt.EventQueue.invokeLater(() -> {
                 try{
-                    doPrint(app, searchResults, pageNum, numberOfPages);
+                    doPrint(app, resultType, searchResults, pageNum, numberOfPages);
                 }catch(RuntimeException e) {
                     Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Unexpected exception", e);
                 }
@@ -117,10 +124,13 @@ public class Print implements Action<App, Boolean> {
         }
     }
     
-    private Boolean doPrint(App app, SearchResults searchResults, int pageNum, int numberOfPages) {
+    private Boolean doPrint(App app, Class resultType, SearchResults searchResults, int pageNum, int numberOfPages) {
+        
+        final String KEY = Long.toString(System.currentTimeMillis()) + "_for_printing";
+        final String MSG = searchResults.getSize() + " results for printing";
         
         final SearchResultsFrame allResultsFrame = app.getUIContext().createSearchResultsFrame(
-                app.getSearchContext(null), searchResults, null, pageNum, numberOfPages, searchResults.getSize()+" results for printing", true);
+                app.getSearchContext(resultType), searchResults, KEY, pageNum, numberOfPages, MSG, true);
         try{
             app.getUIContext().positionFullScreen(allResultsFrame);
             allResultsFrame.pack();

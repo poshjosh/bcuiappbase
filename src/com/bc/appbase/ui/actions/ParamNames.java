@@ -21,7 +21,7 @@ package com.bc.appbase.ui.actions;
  */
 public interface ParamNames {
     
-    String LOOK_AND_FEEL = "lookAndFeel";
+    String LOOK_AND_FEEL_NAME = SetLookAndFeel.LOOK_AND_FEEL_NAME;
     
     String RESULT_TYPE = "resultType";
     

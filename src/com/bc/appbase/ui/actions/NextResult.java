@@ -45,7 +45,7 @@ public class NextResult implements Action<App, JTable> {
         
         final int nextPage = searchResults.getPageNumber() + 1;
         
-        app.getUIContext().loadSearchResults((SearchResultsPanel)parent, app.getSearchContext(null), nextPage, 1);
+        app.getUIContext().loadSearchResultsPages((SearchResultsPanel)parent, app.getSearchContext(null), nextPage, 1);
         
         return table;
     }

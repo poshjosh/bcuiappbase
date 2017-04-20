@@ -39,7 +39,7 @@ public class FirstResult implements Action<App, JTable> {
             parent = parent.getParent();
         }
         
-        app.getUIContext().loadSearchResults((SearchResultsPanel)parent, app.getSearchContext(null), 0, 1);
+        app.getUIContext().loadSearchResultsPages((SearchResultsPanel)parent, app.getSearchContext(null), 0, 1);
         
         return table;
     }
