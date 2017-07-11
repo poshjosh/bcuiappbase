@@ -43,17 +43,21 @@ public class MainFrame extends javax.swing.JFrame {
 
     private final javax.swing.JMenuItem aboutMenuItem;
     private final javax.swing.JMenuItem exitMenuItem;
-    private final javax.swing.JMenu fileMenu;
+    private final com.bc.appbase.ui.FileMenu fileMenu;
     private final javax.swing.JMenu helpMenu;
     private final javax.swing.JMenuBar menuBar;
-    private final javax.swing.JMenuItem printMenuItem;
-    private final javax.swing.JMenuItem saveAsMenuItem;
     private final javax.swing.JPanel topPanel;
     private final javax.swing.JScrollPane topPanelScrollPane;
-    private final javax.swing.JMenuItem viewTableAsExcelMenuItem;
+    private final javax.swing.JMenuItem viewSummaryReportMenuItem;
     private final javax.swing.JMenu toolsMenu;
     private final javax.swing.JMenuItem settingsMenuItem;
+    private final javax.swing.JMenuItem changeLogLevelMenuItem;
+    private final javax.swing.JMenuItem viewLogMenuItem;
     private final javax.swing.JMenuItem refreshMenuItem;
+    
+    private final javax.swing.JMenu recordMenu;
+    private final javax.swing.JMenuItem addNewRecordMenuItem;
+    private final javax.swing.JMenuItem viewRecordMenuItem;
     
     private final com.bc.appbase.ui.SearchResultsPanel searchResultsPanel;
     private final Font menuFont;
@@ -77,16 +81,20 @@ public class MainFrame extends javax.swing.JFrame {
         topPanelScrollPane = new javax.swing.JScrollPane();
         searchResultsPanel = new com.bc.appbase.ui.SearchResultsPanel();
         menuBar = new javax.swing.JMenuBar();
-        fileMenu = new javax.swing.JMenu();
+        fileMenu = new com.bc.appbase.ui.FileMenu();
         toolsMenu = new javax.swing.JMenu(); 
-        viewTableAsExcelMenuItem = new javax.swing.JMenuItem();
-        saveAsMenuItem = new javax.swing.JMenuItem();
-        printMenuItem = new javax.swing.JMenuItem();
+        viewSummaryReportMenuItem = new javax.swing.JMenuItem();
         exitMenuItem = new javax.swing.JMenuItem();
         helpMenu = new javax.swing.JMenu();
         aboutMenuItem = new javax.swing.JMenuItem();
         settingsMenuItem = new javax.swing.JMenuItem(); 
+        changeLogLevelMenuItem = new javax.swing.JMenuItem();  
+        viewLogMenuItem = new javax.swing.JMenuItem();  
         refreshMenuItem = new javax.swing.JMenuItem();
+        
+        recordMenu = new javax.swing.JMenu();
+        addNewRecordMenuItem = new javax.swing.JMenuItem();        
+        viewRecordMenuItem = new javax.swing.JMenuItem();
         
         initComponents();
         
@@ -116,21 +124,30 @@ public class MainFrame extends javax.swing.JFrame {
         
         this.getExitMenuItem().setActionCommand(ActionCommands.EXIT_UI_THEN_EXIT);
         this.getSettingsMenuItem().setActionCommand(ActionCommands.DISPLAY_SETTINGS_UI);
+        this.getChangeLogLevelMenuItem().setActionCommand(ActionCommands.CHANGE_LOG_LEVEL);
+        this.getViewLogMenuItem().setActionCommand(ActionCommands.VIEW_LOG);
         this.getRefreshMenuItem().setActionCommand(ActionCommands.RELOAD_MAIN_RESULTS);
-        app.getUIContext().addActionListeners(this, 
-                this.getExitMenuItem(), this.getSettingsMenuItem(), this.getRefreshMenuItem());
+        this.getAddNewRecordMenuItem().setActionCommand(ActionCommands.DISPLAY_ADD_SELECTION_TYPE_UI);
+        this.getViewRecordMenuItem().setActionCommand(ActionCommands.DISPLAY_SELECTION_TYPE_TABLE);
         
-        this.getViewTableAsExcelMenuItem().setActionCommand(ActionCommands.VIEW_TABLE_AS_EXCEL);
-        this.getSaveAsMenuItem().setActionCommand(ActionCommands.SAVE_TABLE_AS);
-        this.getPrintMenuItem().setActionCommand(ActionCommands.PRINT);
-        app.getUIContext().addActionListeners(this.getSearchResultsPanel().getSearchResultsTable(), 
-                this.getViewTableAsExcelMenuItem(),
-                this.getSaveAsMenuItem(), 
-                this.getPrintMenuItem());
+        app.getUIContext().addActionListeners(this, 
+                this.getExitMenuItem(), this.getSettingsMenuItem(), 
+                this.getChangeLogLevelMenuItem(), this.getViewLogMenuItem(),
+                this.getRefreshMenuItem(), this.getAddNewRecordMenuItem(),
+                this.getViewRecordMenuItem());
+        
+        this.fileMenu.addActionListenerToDefaultMenuItems(app.getUIContext(),
+                this.getSearchResultsPanel().getSearchResultsTable());
+        
+        this.getViewSummaryReportMenuItem().setActionCommand(ActionCommands.VIEW_SUMMARY_REPORT);
+        
+        app.getUIContext().addActionListeners(
+                this.getSearchResultsPanel().getSearchResultsTable(), 
+                this.getViewSummaryReportMenuItem());
 
         this.init(app, this.topPanel);
         
-        this.getSearchResultsPanel().init(app);
+        this.getSearchResultsPanel().init(app.getUIContext());
         
         if(app.getUIContext().getImageIcon() != null) {
             this.setIconImage(app.getUIContext().getImageIcon().getImage());
@@ -167,25 +184,16 @@ public class MainFrame extends javax.swing.JFrame {
         fileMenu.setMnemonic('f');
         fileMenu.setText("File");
         fileMenu.setFont(this.menuFont);
-
-        viewTableAsExcelMenuItem.setFont(this.menuFont);
-        viewTableAsExcelMenuItem.setText("View Excel");
-        fileMenu.add(viewTableAsExcelMenuItem);
-
-        saveAsMenuItem.setFont(this.menuFont);
-        saveAsMenuItem.setMnemonic('a');
-        saveAsMenuItem.setText("Save As ...");
-        saveAsMenuItem.setDisplayedMnemonicIndex(5);
-        fileMenu.add(saveAsMenuItem);
+        fileMenu.setMenuItemsFont(this.menuFont);
+        
+        viewSummaryReportMenuItem.setFont(this.menuFont);
+        viewSummaryReportMenuItem.setText("View Summary Report");
+        fileMenu.add(viewSummaryReportMenuItem);
 
         refreshMenuItem.setFont(menuFont);
         refreshMenuItem.setText("Refresh");
         fileMenu.add(refreshMenuItem);
         
-        printMenuItem.setFont(this.menuFont);
-        printMenuItem.setText("Print");
-        fileMenu.add(printMenuItem);
-
         exitMenuItem.setFont(this.menuFont);
         exitMenuItem.setMnemonic('x');
         exitMenuItem.setText("Exit");
@@ -193,14 +201,34 @@ public class MainFrame extends javax.swing.JFrame {
 
         menuBar.add(fileMenu);
 
+        recordMenu.setText("Records");
+        recordMenu.setFont(this.menuFont);
+        
+        addNewRecordMenuItem.setFont(this.menuFont);
+        addNewRecordMenuItem.setText("Add New Record");
+        recordMenu.add(addNewRecordMenuItem);
+        
+        viewRecordMenuItem.setFont(this.menuFont);
+        viewRecordMenuItem.setText("View Records");
+        recordMenu.add(viewRecordMenuItem);
+        
+        menuBar.add(recordMenu);
+        
         toolsMenu.setMnemonic('t');
         toolsMenu.setText("Tools");
         toolsMenu.setFont(this.menuFont);
 
         settingsMenuItem.setFont(this.menuFont);
-        settingsMenuItem.setMnemonic('s');
         settingsMenuItem.setText("Settings");
         toolsMenu.add(settingsMenuItem);
+        
+        changeLogLevelMenuItem.setFont(this.menuFont);
+        changeLogLevelMenuItem.setText("Change Log Level");
+        toolsMenu.add(changeLogLevelMenuItem);
+        
+        viewLogMenuItem.setFont(this.menuFont);
+        viewLogMenuItem.setText("View Log");
+        toolsMenu.add(viewLogMenuItem);
         
         menuBar.add(toolsMenu); 
         
@@ -255,7 +283,7 @@ public class MainFrame extends javax.swing.JFrame {
         return exitMenuItem;
     }
 
-    public JMenu getFileMenu() {
+    public com.bc.appbase.ui.FileMenu getFileMenu() {
         return fileMenu;
     }
 
@@ -272,7 +300,7 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     public JMenuItem getSaveAsMenuItem() {
-        return saveAsMenuItem;
+        return this.getFileMenu().getSaveAsMenuItem();
     }
 
     public SearchResultsPanel getSearchResultsPanel() {
@@ -288,11 +316,15 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     public JMenuItem getPrintMenuItem() {
-        return printMenuItem;
+        return this.getFileMenu().getPrintMenuItem();
+    }
+
+    public JMenuItem getViewSummaryReportMenuItem() {
+        return viewSummaryReportMenuItem;
     }
 
     public JMenuItem getViewTableAsExcelMenuItem() {
-        return viewTableAsExcelMenuItem;
+        return this.getFileMenu().getViewTableAsExcelMenuItem();
     }
 
     public JMenu getToolsMenu() {
@@ -301,6 +333,26 @@ public class MainFrame extends javax.swing.JFrame {
 
     public JMenuItem getSettingsMenuItem() {
         return settingsMenuItem;
+    }
+
+    public JMenuItem getChangeLogLevelMenuItem() {
+        return changeLogLevelMenuItem;
+    }
+
+    public JMenuItem getViewLogMenuItem() {
+        return viewLogMenuItem;
+    }
+
+    public JMenu getRecordMenu() {
+        return recordMenu;
+    }
+
+    public JMenuItem getViewRecordMenuItem() {
+        return viewRecordMenuItem;
+    }
+
+    public JMenuItem getAddNewRecordMenuItem() {
+        return addNewRecordMenuItem;
     }
 
     public Font getMenuFont() {

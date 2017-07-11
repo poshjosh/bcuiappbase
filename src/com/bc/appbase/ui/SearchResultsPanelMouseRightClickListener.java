@@ -56,7 +56,7 @@ public class SearchResultsPanelMouseRightClickListener implements MouseListener 
         final JTable table = this.searchResultsPanel.getSearchResultsTable();
         this.rightClickMenu.setInvoker(table);
         final UIContext uiContext = app.getUIContext();
-        final Font font = uiContext.getFont(this.rightClickMenu, uiContext.getFont(table, uiContext.getFont()));
+        final Font font = uiContext.getFont(JPopupMenu.class, uiContext.getFont(JTable.class));
         this.rightClickMenu.setFont(font);
     }
     

@@ -30,7 +30,7 @@ public class MessageUI extends JTextArea{
         this.setEditable(false);
         this.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         this.setLineWrap(true);
-        final Dimension dim = new Dimension(300, 185);
+        final Dimension dim = new Dimension(300, 100);
         this.setMaximumSize(dim);
         this.setMinimumSize(dim);
         this.setPreferredSize(dim);

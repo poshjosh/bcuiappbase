@@ -16,25 +16,37 @@
 
 package com.bc.appbase.ui;
 
+import com.bc.appcore.util.SelectionValues;
 import java.awt.Component;
 import java.awt.Font;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Apr 6, 2017 11:05:31 AM
  */
-public interface ComponentModel {
-
-    Font getFont();
-
-    int getWidth();
-
-    int getHeight();
+public interface ComponentModel extends SelectionValues<Class> {
     
-    Component getComponent(Class valueType, String name, Object value);
+    interface ComponentProperties {
+        
+        ComponentProperties DEFAULT = new ComponentPropertiesImpl();
+
+        Font getFont(Component component);
+
+        int getWidth(Component component);
+
+        int getHeight(Component component);
+
+        boolean isEnabled(Component component);
+
+        boolean isEditable(Component component);
+    }
     
-    Object getValue(Component component);
+    ComponentModel deriveNewFrom(ComponentProperties properties);
     
-    <T> T getValue(Component component, Class<T> type);
+    ComponentProperties getComponentProperties();
+    
+    Component getComponent(Class parentType, Class valueType, String name, Object value);
+    
+    Object getValue(Component component, Object outputIfNone);
     
     <T> T setValue(Component component, T value);
 }

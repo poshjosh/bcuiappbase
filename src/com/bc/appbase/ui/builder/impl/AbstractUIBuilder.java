@@ -2,7 +2,7 @@
  * Copyright 2017 NUROX Ltd.
  *
  * Licensed under the NUROX Ltd Software License (the "License");
- * you may not use this file except in compliance source the License.
+ * you may not use this file except in compliance sourceData the License.
  * You may obtain a copy of the License at
  *
  *      http://www.looseboxes.com/legal/licenses/software.html
@@ -16,56 +16,48 @@
 
 package com.bc.appbase.ui.builder.impl;
 
+import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.ComponentModel.ComponentProperties;
+import com.bc.appbase.ui.ComponentPropertiesImpl;
+import com.bc.appbase.ui.SequentialLayout;
 import com.bc.appbase.ui.builder.UIBuilder;
+import com.bc.appcore.jpa.SelectionContext;
+import com.bc.appcore.typeprovider.MemberTypeProvider;
 import java.awt.Component;
-import com.bc.appbase.ui.builder.EntryUIProvider;
-import com.bc.appcore.TypeProvider;
+import java.awt.Container;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JPanel;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Mar 25, 2017 10:00:57 PM
  */
-public abstract class AbstractUIBuilder<I, O extends Component> 
-        implements UIBuilder<I, O> {
+public abstract class AbstractUIBuilder<U extends UIBuilder<I, Container>, I> 
+        implements UIBuilder<I, Container> {
+
+    private static final Logger logger = Logger.getLogger(AbstractUIBuilder.class.getName());
     
     private boolean built;
-    private I source;
-    private O target;
-    private TypeProvider typeProvider;
-    private EntryUIProvider entryUIProvider;
+    private Class sourceType;
+    private I sourceData;
+    private Container targetUI;
+    private MemberTypeProvider typeProvider;
+    private SelectionContext selectionContext;
+    private ComponentModel componentModel;
+    private Boolean editable;
     
-    protected abstract O doBuild();
+    private final SequentialLayout sequentialLayout;
 
-    @Override
-    public UIBuilder<I, O> source(I source) {
-        this.source = source;
-        return this;
+    public AbstractUIBuilder(SequentialLayout sequentialLayout) {
+        this.sequentialLayout = Objects.requireNonNull(sequentialLayout);
+        this.editable = Boolean.TRUE;
     }
-
+    
+    public abstract boolean build(Class sourceType, I source, Container container);
+    
     @Override
-    public UIBuilder<I, O> target(O target) {
-        this.target = target;
-        return this;
-    }
-
-    @Override
-    public UIBuilder<I, O> typeProvider(TypeProvider typeProvider) {
-        this.typeProvider = typeProvider;
-        return this;
-    }
-
-    @Override
-    public UIBuilder<I, O> entryUIProvider(EntryUIProvider labelProvider) {
-        this.entryUIProvider = labelProvider;
-        return this;
-    }
-
-    @Override
-    public boolean isBuilt() {
-        return this.built;
-    }
-
-    @Override
-    public O build() {
+    public Container build() {
         
         if(this.isBuilt()) {
             throw new IllegalStateException("build() method may only be called once");
@@ -73,22 +65,121 @@ public abstract class AbstractUIBuilder<I, O extends Component>
         
         this.built = true;
         
-        return this.doBuild();
+        if(this.sourceType == null) {
+            this.sourceType(this.sourceData.getClass());
+        }
+
+        if(this.targetUI == null) {
+            this.targetUI(this.createContainer(this.sourceType, this.sourceData, null));
+        }
+        
+        ComponentProperties componentProperties = this.componentModel.getComponentProperties();
+        
+        if(componentProperties.isEditable(targetUI) != this.editable) {
+            
+            componentProperties = new ComponentPropertiesImpl(componentProperties) {
+                @Override
+                public boolean isEditable(Component component) {
+                    return editable;
+                }
+            };
+
+            logger.log(Level.FINE, "Updating `editable` property of components to: {0}", editable);
+
+            this.entryUIProvider(componentModel.deriveNewFrom(componentProperties));
+        }
+        
+        if(this.build(this.sourceType, this.sourceData, this.targetUI)) {
+
+            return this.targetUI;
+            
+        }else{
+            
+            throw new IllegalArgumentException("Build failed");
+        }
     }
 
-    public TypeProvider getTypeProvider() {
-        return typeProvider;
+    public Container createContainer(Class sourceType, Object sourceData, String name) {
+        final JPanel panel = new JPanel();
+        return panel;
     }
     
-    public EntryUIProvider getEntryUIProvider() {
-        return entryUIProvider;
+    @Override
+    public U sourceType(Class sourceType) {
+        this.sourceType = sourceType;
+        return (U)this;
+    }
+    
+    @Override
+    public U sourceData(I sourceData) {
+        this.sourceData = sourceData;
+        return (U)this;
     }
 
-    public I getSource() {
-        return source;
+    @Override
+    public U targetUI(Container target) {
+        this.targetUI = target;
+        return (U)this;
     }
 
-    public O getTarget() {
-        return target;
+    @Override
+    public U typeProvider(MemberTypeProvider typeProvider) {
+        this.typeProvider = typeProvider;
+        return (U)this;
+    }
+
+    @Override
+    public U selectionContext(SelectionContext selectionContext) {
+        this.selectionContext = selectionContext;
+        return (U)this;
+    }
+    
+    @Override
+    public U entryUIProvider(ComponentModel componentModel) {
+        this.componentModel = componentModel;
+        return (U)this;
+    }
+
+    @Override
+    public U editable(Boolean editable) {
+        this.editable = editable;
+        return (U)this;
+    }
+
+    @Override
+    public boolean isBuilt() {
+        return this.built;
+    }
+
+    public SequentialLayout getSequentialLayout() {
+        return sequentialLayout;
+    }
+
+    public MemberTypeProvider getTypeProvider() {
+        return typeProvider;
+    }
+
+    public SelectionContext getSelectionContext() {
+        return selectionContext;
+    }
+
+    public ComponentModel getComponentModel() {
+        return componentModel;
+    }
+
+    public boolean isEditable() {
+        return editable;
+    }
+
+    public Class getSourceType() {
+        return sourceType;
+    }
+
+    public I getSourceData() {
+        return sourceData;
+    }
+
+    public Container getTargetUI() {
+        return targetUI;
     }
 }

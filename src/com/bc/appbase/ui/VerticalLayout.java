@@ -18,22 +18,53 @@ package com.bc.appbase.ui;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import javax.swing.GroupLayout;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Mar 28, 2017 10:59:33 PM
  */
-public class VerticalLayout {
+public class VerticalLayout implements SequentialLayout {
 
-    @SuppressWarnings("unchecked")
-    public void addComponents(Container container, List<Component> components) {
+    private final Collection<Component> added;
+
+    public VerticalLayout() {
+        this.added = new ArrayList<>();
+    }
+    
+    @Override
+    public SequentialLayout addComponent(Component component) {
+        added.add(component);
+        return this;
+    }
+
+    @Override
+    public void addComponents(Container container) {
+        this.addComponents(container, true, false);
+    }
+    
+    @Override
+    public void addComponents(Container container, boolean horizontalResizable, boolean verticalResizable) {
+        
+        if(added.isEmpty()) {
+            throw new IllegalStateException(
+                    "At least one component must have been added via addComponent(java.awt.Component) before calling this method");
+        }
+        
+        this.addComponents(container, added, horizontalResizable, verticalResizable);
+        
+        added.clear();
+    }
+    
+    @Override
+    public void addComponents(Container container, Collection<Component> components) {
         this.addComponents(container, components, true, false);
     }
     
-    @SuppressWarnings("unchecked")
-    public void addComponents(Container container, List<Component> components, 
+    @Override
+    public void addComponents(Container container, Collection<Component> components, 
             boolean horizontalResizable, boolean verticalResizable) {
 
         GroupLayout layout = new GroupLayout(container);

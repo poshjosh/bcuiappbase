@@ -23,6 +23,12 @@ import com.bc.appcore.actions.ActionCommandsBase;
  */
 public interface ActionCommands extends ActionCommandsBase {
     
+    String UPDATE_DATABASE_WITH_ENTITIES = UpdateDatabaseWithEntities.class.getName();
+    
+    String VIEW_SUMMARY_REPORT = ViewSummaryReport.class.getName();
+    
+    String CHANGE_LOG_LEVEL = ChangeLogLevel.class.getName();
+    
     String EXIT_UI_THEN_EXIT = ExitUIThenExit.class.getName();
     
     String REFRESH_ALL_RESULTS = RefreshAllResults.class.getName();
@@ -32,6 +38,10 @@ public interface ActionCommands extends ActionCommandsBase {
     String REFRESH_RESULTS = RefreshResults.class.getName();
 
     String VIEW_TABLE_AS_EXCEL = ViewTableAsExcel.class.getName();
+    
+    String CREATE_WORKSHEET_FRAME = CreateWorksheetFrame.class.getName();
+    
+    String PROMPT_SELECT_ROWS_AS_TABLE_MODEL = PromptSelectRowsAsTableModel.class.getName();
     
     String SAVE_TABLE_AS = SaveTableAs.class.getName();
     
@@ -55,11 +65,35 @@ public interface ActionCommands extends ActionCommandsBase {
     
     String PROMPT_SELECT_SHEETNAME = PromptSelectSheetName.class.getName();
     
+    String PROMPT_SELECT_ENTITY_TYPE = PromptSelectEntityType.class.getName();
+    
+    String PROMPT_SELECT_SELECTION_TYPE = PromptSelectSelectionType.class.getName();
+    
     String OPEN_FILE = OpenFile.class.getName();
     
-    String DISPLAY_OPEN_FOLDER_DIALOG = DisplayOpenFolderDialog.class.getName();
+    String DISPLAY_URL = DisplayURL.class.getName();
+    
+    String DISPLAY_TEXT = DisplayText.class.getName();
+    
+    String DISPLAY_OPEN_FOLDER_DIALOG = DisplayOpenFolderDialogAction.class.getName();
     
     String DISPLAY_OPEN_DIALOG = DisplayOpenDialog.class.getName();
     
     String DISPLAY_SAVE_DIALOG = DisplaySaveDialog.class.getName();
+    
+    String BLOCK_WINDOW_TILL_BUTTON_CLICK = BlockWindowTillButtonClick.class.getName();
+    
+    String BLOCK_WINDOW_TILL_CLOSE_BUTTON_CLICK = BlockWindowUntilCloseButtonClick.class.getName();
+    
+    String VIEW_LOG = ViewLog.class.getName();
+    
+    String DISPLAY_MULTIPLE_RECORDS = DisplaySelectedRecords.class.getName();
+    
+    String DISPLAY_RECORD_LIST = DisplayRecordList.class.getName();
+    
+    String DELETE_SELECTED_RECORDS = DeleteSelectedRecords.class.getName();
+
+    String DISPLAY_ADD_SELECTION_TYPE_UI = DisplayAddSelectionTypeUI.class.getName();
+    
+    String DISPLAY_SELECTION_TYPE_TABLE = DisplaySelectionTypeTable.class.getName();
 }

@@ -23,8 +23,8 @@ import javax.swing.JOptionPane;
 import com.bc.jpa.sync.JpaSync;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.SwingUtilities;
 import com.bc.appbase.App;
+import com.bc.appcore.actions.TaskExecutionException;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 20, 2017 7:33:54 PM
@@ -32,8 +32,7 @@ import com.bc.appbase.App;
 public class ExitUIThenExit implements Action<App, Boolean> {
 
     @Override
-    public Boolean execute(App app, Map<String, Object> params) 
-            throws com.bc.appcore.actions.TaskExecutionException {
+    public Boolean execute(App app, Map<String, Object> params) throws TaskExecutionException {
 
         final int selection = JOptionPane.showConfirmDialog(
                 app.getUIContext().getMainFrame(), "Are you sure you want to exit?", 
@@ -52,27 +51,9 @@ public class ExitUIThenExit implements Action<App, Boolean> {
                 return Boolean.TRUE;
             }else{
 
-                if(SwingUtilities.isEventDispatchThread()) {
-                    
-                    app.getUIContext().dispose();
-                                                  
-                    this.waitForJpaSyncThenExit(app, jpaSync);
-                                                   
-                }else{
-                                                  
-                    java.awt.EventQueue.invokeLater(() -> { 
-                        try{
-                                                            
-                            app.getUIContext().dispose(); 
-                                                          
-                            this.waitForJpaSyncThenExit(app, jpaSync);
-                                                        
-                        }catch(RuntimeException e) {
-                            Logger.getLogger(this.getClass().getName()).log(Level.WARNING, 
-                                    "Exception while disposing UI", e);
-                        }
-                    });
-                }
+                app.getUIContext().dispose(); 
+
+                this.waitForJpaSyncThenExit(app, jpaSync);
                 
                 return Boolean.FALSE;
             }

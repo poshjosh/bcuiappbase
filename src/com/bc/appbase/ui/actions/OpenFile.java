@@ -25,7 +25,6 @@ import com.bc.appcore.parameter.ParameterNotFoundException;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Map;
 
 /**
@@ -33,22 +32,18 @@ import java.util.Map;
  */
 public class OpenFile implements Action<App, Boolean> {
     
-    public static final String FILE = "file";
-
     @Override
     public Boolean execute(App app, Map<String, Object> params) 
             throws ParameterException, TaskExecutionException {
         
         final File file;
-        final Object oval = params.get(FILE);
+        final Object oval = params.get(java.io.File.class.getName());
         if(oval == null) {
-            throw new ParameterNotFoundException(FILE);
+            throw new ParameterNotFoundException(java.io.File.class.getName());
         }else if(oval instanceof File) {
             file = (File)oval;
-        }else if(oval instanceof Path) {
-            file = ((Path)oval).toFile();
         }else {
-            throw new InvalidParameterException(FILE + " = " + oval);
+            throw new InvalidParameterException(java.io.File.class.getName() + " = " + oval);
         }
         
         final String msg = "Openning of selected file not supported";

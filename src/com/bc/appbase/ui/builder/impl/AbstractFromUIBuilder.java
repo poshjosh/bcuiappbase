@@ -16,7 +16,6 @@
 
 package com.bc.appbase.ui.builder.impl;
 
-import com.bc.appbase.App;
 import com.bc.appbase.ui.ComponentModel;
 import com.bc.appbase.ui.builder.FromUIBuilder;
 import java.awt.Component;
@@ -27,12 +26,13 @@ import java.awt.Component;
 public abstract class AbstractFromUIBuilder<I extends Component, O> implements FromUIBuilder<I, O> {
 
     private boolean built;
-    private App app;
     private I ui;
     private O source;
     private O target;
     private FromUIBuilder.Filter filter;
+    private FromUIBuilder.Formatter formatter;
     private ComponentModel componentModel;
+//    private SelectionContext selectionContext;
 
     public AbstractFromUIBuilder() {
         this.initDefaults();
@@ -40,6 +40,7 @@ public abstract class AbstractFromUIBuilder<I extends Component, O> implements F
     
     private void initDefaults() {
         this.filter = FromUIBuilder.Filter.ACCEPT_ALL;
+        this.formatter = FromUIBuilder.Formatter.NO_OP;
     }
     
     protected abstract O doBuild();
@@ -53,10 +54,6 @@ public abstract class AbstractFromUIBuilder<I extends Component, O> implements F
         
         this.built = true;
 
-        if(this.componentModel == null) {
-            this.componentModel = app.get(ComponentModel.class);
-        }  
-        
         return this.doBuild();
     }
     
@@ -79,14 +76,14 @@ public abstract class AbstractFromUIBuilder<I extends Component, O> implements F
     }
 
     @Override
-    public FromUIBuilder<I, O> context(App context) {
-        this.app = context;
+    public FromUIBuilder<I, O> filter(Filter filter) {
+        this.filter = filter;
         return this;
     }
 
     @Override
-    public FromUIBuilder<I, O> filter(Filter filter) {
-        this.filter = filter;
+    public FromUIBuilder<I, O> filter(Formatter formatter) {
+        this.formatter = formatter;
         return this;
     }
 
@@ -96,6 +93,12 @@ public abstract class AbstractFromUIBuilder<I extends Component, O> implements F
         return this;
     }
 
+//    @Override
+//    public FromUIBuilder<I, O> selectionContext(SelectionContext selectionContext) {
+//        this.selectionContext = selectionContext;
+//        return this;
+//    }
+    
     @Override
     public boolean isBuilt() {
         return this.built;
@@ -117,11 +120,15 @@ public abstract class AbstractFromUIBuilder<I extends Component, O> implements F
         return filter;
     }
 
-    public App getApp() {
-        return app;
+    public Formatter getFormatter() {
+        return formatter;
     }
 
     public ComponentModel getComponentModel() {
         return componentModel;
     }
+
+//    public SelectionContext getSelectionContext() {
+//        return selectionContext;
+//    }
 }

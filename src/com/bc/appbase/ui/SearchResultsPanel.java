@@ -16,9 +16,8 @@
 
 package com.bc.appbase.ui;
 
+import com.bc.appbase.ui.table.TableFormat;
 import com.bc.jpa.search.SearchResults;
-import java.awt.Color;
-import java.awt.Font;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
@@ -26,9 +25,15 @@ import javax.swing.JTable;
 import com.bc.appbase.App;
 import com.bc.appcore.jpa.SearchContext;
 import com.bc.appbase.ui.actions.ActionCommands;
+import com.bc.appbase.ui.table.TableColumnManager;
+import com.bc.appcore.exceptions.SearchResultsNotFoundException;
+import com.bc.appcore.jpa.LoadPageThread;
+import com.bc.appcore.jpa.model.ResultModel;
+import java.awt.Window;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.table.TableModel;
 
 /**
  * @author Josh
@@ -37,42 +42,29 @@ public class SearchResultsPanel extends javax.swing.JPanel {
     
     private transient static final Logger logger = Logger.getLogger(SearchResultsPanel.class.getName());
 
-    public SearchResultsPanel() {
-        this(null);
-    }
+    private final TableColumnManager tableColumnManager;
     
-    public SearchResultsPanel(App app) {
+    public SearchResultsPanel() {
         initComponents();
-        if(app != null) {
-            this.init(app);
-        }
+        this.tableColumnManager = new TableColumnManager(this.getSearchResultsTable(), true);
     }
 
-    public void init(App app) {
+    public void init(UIContext uiContext) {
         
         final JTable table = this.getSearchResultsTable();
         
-        final Font font = app.getUIContext().getFont(table);
-        table.setFont(font);
-        table.getTableHeader().setFont(font.deriveFont(Font.BOLD));
-//        table.setIntercellSpacing(new Dimension(4, 4));
-        table.setShowHorizontalLines(true);
-        table.setShowVerticalLines(true);
-        table.setShowGrid(true);
-        table.setGridColor(Color.DARK_GRAY);
-
-        table.setAutoCreateRowSorter(true);
+        new TableFormat(uiContext).format(table);
 
         this.getNextPageButton().setActionCommand(ActionCommands.NEXT_RESULT);
         this.getPreviousPageButton().setActionCommand(ActionCommands.PREVIOUS_RESULT);
         this.getLastPageButton().setActionCommand(ActionCommands.LAST_RESULT);
         this.getFirstPageButton().setActionCommand(ActionCommands.FIRST_RESULT);
         
-        app.getUIContext().addActionListeners(table, this.getAddButton(),
+        uiContext.addActionListeners(table, this.getAddButton(),
                 this.getNextPageButton(), this.getPreviousPageButton(),
                 this.getLastPageButton(), this.getFirstPageButton());
 
-        table.addMouseListener(app.getUIContext().getMouseListener(this));
+        table.addMouseListener(uiContext.getMouseListener(this));
     }
 
     public void reset(App app, Class entityType) {
@@ -109,10 +101,94 @@ public class SearchResultsPanel extends javax.swing.JPanel {
             }
         }
         
-        app.getUIContext().loadSearchResultsUI(
-                this, searchContext, searchResults, KEY, 0, 1, true);
+        this.loadSearchResultsUI(
+                app.getUIContext(), searchContext, searchResults, KEY, 0, 1, true);
     }
 
+    public <T> Boolean loadSearchResultsUI(
+            UIContext uiContext, SearchContext<T> searchContext, SearchResults<T> searchResults, 
+            String ID, int firstPage, int numberOfPages, boolean emptyResultsAllowed) {
+
+        if(logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "#loadSearchResults(...) Page: {0}, ID: {1}", 
+                    new Object[]{firstPage, ID});
+        }
+        
+        final Boolean output;
+        if(!emptyResultsAllowed && searchResults.getSize() == 0) {
+            output = Boolean.FALSE;
+        }else{
+            output = this.doLoadSearchResultsUI(uiContext, searchContext, searchResults, ID, firstPage, numberOfPages, true);
+        }
+        
+        return output;
+    }
+    private <T> Boolean doLoadSearchResultsUI(
+           UIContext uiContext, SearchContext<T> searchContext, SearchResults<T> searchResults, 
+            String ID, int firstPage, int numberOfPages, boolean emptyResultsAllowed) {
+        final Boolean output;
+        if(!emptyResultsAllowed && searchResults.getSize() == 0) {
+            output = Boolean.FALSE;
+        }else{
+            
+            this.loadSearchResultsPages(uiContext, searchContext, searchResults, firstPage, numberOfPages);
+            
+            final Window resultsWindow = (Window)this.getTopLevelAncestor();
+
+            if(ID != null) {
+                uiContext.linkWindowToSearchResults(resultsWindow, searchResults, ID);
+            }
+            
+            output = Boolean.TRUE;
+        }
+        
+        return output;
+    }
+    
+    public void loadSearchResultsPages(UIContext uiContext, SearchContext searchContext,
+            int firstPage, int numberOfPages) throws SearchResultsNotFoundException {
+
+        final SearchResults searchResults = uiContext.getLinkedSearchResults(this);
+        
+        this.loadSearchResultsPages(uiContext, searchContext, searchResults, firstPage, numberOfPages);
+    }
+    
+    private void loadSearchResultsPages(UIContext uiContext, SearchContext searchContext, 
+            SearchResults searchResults, int firstPage, int numberOfPages) {
+        
+        final ResultModel resultModel = searchContext.getResultModel();
+
+        final JTable table = this.getSearchResultsTable();
+        
+        if(firstPage == 0 && searchResults.getSize() == 0) {
+            
+            final TableModel tableModel = uiContext.getTableModel(searchResults, resultModel, firstPage, 0);
+            
+            table.setModel(tableModel);
+            
+        }else{
+            
+            if(firstPage < 0 || firstPage >= searchResults.getPageCount()) {
+                return;
+            }
+
+            logger.log(Level.FINE, "Setting page number to: {0}", firstPage);
+            searchResults.setPageNumber(firstPage);
+
+            final TableModel tableModel = uiContext.getTableModel(searchResults, resultModel, firstPage, numberOfPages);
+
+            table.setModel(tableModel);
+            
+            uiContext.updateTableUI(table, resultModel.getEntityType(), resultModel.getSerialColumnIndex());
+            
+            new LoadPageThread(searchResults, firstPage + numberOfPages).start();
+        }
+
+        final String paginationMessage = searchContext.getPaginationMessage(searchResults, numberOfPages, true, false);
+        
+        this.getPaginationLabel().setText(paginationMessage);
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -132,7 +208,7 @@ public class SearchResultsPanel extends javax.swing.JPanel {
         addButton = new javax.swing.JButton();
 
         setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
-        setPreferredSize(new java.awt.Dimension(570, 512));
+        setPreferredSize(new java.awt.Dimension(570, 550));
 
         scrollPane.setPreferredSize(new java.awt.Dimension(600, 300));
 
@@ -149,7 +225,7 @@ public class SearchResultsPanel extends javax.swing.JPanel {
             }
         ));
         searchResultsTable.setMaximumSize(new java.awt.Dimension(32767, 32767));
-        searchResultsTable.setPreferredSize(new java.awt.Dimension(600, 500));
+        searchResultsTable.setPreferredSize(new java.awt.Dimension(580, 520));
         scrollPane.setViewportView(searchResultsTable);
 
         previousPageButton.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
@@ -185,10 +261,10 @@ public class SearchResultsPanel extends javax.swing.JPanel {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(previousPageButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(paginationLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 180, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(paginationLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                         .addComponent(nextPageButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(lastPageButton)))
                 .addContainerGap())
         );
@@ -207,7 +283,7 @@ public class SearchResultsPanel extends javax.swing.JPanel {
                             .addComponent(addButton)))
                     .addComponent(paginationLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(scrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 453, Short.MAX_VALUE)
+                .addComponent(scrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 491, Short.MAX_VALUE)
                 .addContainerGap())
         );
     }// </editor-fold>//GEN-END:initComponents
@@ -254,5 +330,9 @@ public class SearchResultsPanel extends javax.swing.JPanel {
 
     public JButton getAddButton() {
         return addButton;
+    }
+
+    public TableColumnManager getTableColumnManager() {
+        return tableColumnManager;
     }
 }

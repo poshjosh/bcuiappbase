@@ -16,16 +16,16 @@
 
 package com.bc.appbase.ui;
 
-import com.bc.appbase.App;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.HeadlessException;
 import java.awt.Toolkit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.swing.JButton;
+import javax.swing.AbstractButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -35,23 +35,39 @@ import javax.swing.JScrollPane;
  */
 public class SimpleFrame extends JFrame {
 
-    public SimpleFrame(String title, App app, Container ui, Font font, 
-            String buttonText, String buttonActionCommand) throws HeadlessException {
+    public SimpleFrame(UIContext uiContext, Container ui, String title, Font font, AbstractButton button) throws HeadlessException {
+        this(uiContext, ui, title, font, button, null, null);
+    }
+
+    public SimpleFrame(UIContext uiContext, Container ui, String title, Font font, 
+            AbstractButton addButtonTop, AbstractButton addButtonBottom, String actionCommand) throws HeadlessException {
+        
         super(title);
-        final JButton addButtonTop = new JButton(buttonText);
-        addButtonTop.setActionCommand(buttonActionCommand);
         
-        final JButton addButtonBottom = new JButton(buttonText);
-        addButtonBottom.setActionCommand(buttonActionCommand);
+        if(addButtonTop != null) {
+            addButtonTop.setFont(font);
+            if(actionCommand != null) {
+                addButtonTop.setActionCommand(actionCommand);
+                uiContext.addActionListeners(ui, addButtonTop);
+            }
+        }
         
-        app.getUIContext().addActionListeners(ui, addButtonTop, addButtonBottom);
-        
-        addButtonTop.setFont(font);
-        addButtonBottom.setFont(font);
+        if(addButtonBottom != null) {
+            addButtonBottom.setFont(font);
+            if(actionCommand != null) {
+                addButtonBottom.setActionCommand(actionCommand);
+                uiContext.addActionListeners(ui, addButtonBottom);
+            }
+        }
         
         final JPanel combined = new JPanel();
         final VerticalLayout verticalLayout = new VerticalLayout();
-        final List<Component> components = Arrays.asList(addButtonTop, ui, addButtonBottom);
+        final List<Component> components = new ArrayList();
+        Arrays.asList(addButtonTop, ui, addButtonBottom).stream().forEach((c) -> {
+            if(c != null) {
+                components.add(c);
+            }
+        });
         verticalLayout.addComponents(combined, components);
         final JScrollPane scrolls = new JScrollPane(combined);
         

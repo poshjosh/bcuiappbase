@@ -24,6 +24,9 @@ import javax.swing.JOptionPane;
 import jxl.Workbook;
 import jxl.read.biff.BiffException;
 import com.bc.appbase.App;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JFrame;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Mar 24, 2017 9:47:42 PM
@@ -33,9 +36,17 @@ public class PromptSelectSheetName implements Action<App, String> {
     @Override
     public String execute(App app, Map<String, Object> params) 
             throws com.bc.appcore.actions.TaskExecutionException {
+        
         try{
+            
             final Workbook workbook = Objects.requireNonNull((Workbook)params.get(Workbook.class.getName()));
-            return this.execute(app, workbook);
+            
+            final String sheetName = this.execute(app, workbook);
+            
+            Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Sheet name: {0}", sheetName);
+            
+            return sheetName;
+            
         }catch(IOException | BiffException e) {
             throw new com.bc.appcore.actions.TaskExecutionException(e);
         }
@@ -52,13 +63,16 @@ public class PromptSelectSheetName implements Action<App, String> {
             return null;
         }
 
-        final Object oval = JOptionPane.showInputDialog(null, "Select the worksheet to import data from", "Select Worksheet", JOptionPane.PLAIN_MESSAGE, null, sheetNames, sheetNames[0]);
+        final JFrame frame = app.getUIContext().getMainFrame();
+        final Object oval = JOptionPane.showInputDialog(frame, 
+                "Select the worksheet to import data from", "Select Worksheet", 
+                JOptionPane.PLAIN_MESSAGE, null, sheetNames, sheetNames[0]);
 
         final String sheetName = oval == null ? null : oval.toString();
 
         if(sheetName == null || sheetName.isEmpty()) {
 
-            JOptionPane.showMessageDialog(null, 
+            JOptionPane.showMessageDialog(frame, 
                     "You did not select any sheet name to import data from",
                     "Nothing Selected", JOptionPane.WARNING_MESSAGE);
         }

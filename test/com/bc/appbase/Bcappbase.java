@@ -1,81 +1,67 @@
 package com.bc.appbase;
 
-import com.bc.appbase.ui.ComponentModel;
-import com.bc.appbase.ui.ComponentModelImpl;
-import com.bc.appbase.ui.DateFromUIBuilderImpl;
-import com.bc.appbase.ui.DateUIUpdaterImpl;
-import com.bc.appbase.ui.builder.UIBuilder;
-import com.bc.appcore.TypeProvider;
-import com.bc.appbase.ui.builder.impl.EntryUIProviderImpl;
-import com.bc.appbase.ui.builder.impl.UIBuilderFromMap;
-import com.bc.appcore.util.Selection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import javax.swing.JFrame;
-import com.bc.appcore.jpa.SelectionContext;
-import java.awt.Container;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JTable;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Mar 22, 2017 12:22:15 PM
  */
+class LocalClass{
+    
+}
 public class Bcappbase {
+
+    private static final Logger LOGGER = Logger.getLogger(Bcappbase.class.getName());
+    
+    public class InnerClass extends JTable{
+        
+    }
 
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {  
         
-        final Map props = new HashMap();
-        props.put("Name", "Chinomso Ikwuagwu");
-        props.put("Married", "true");
-        props.put("Alive", Boolean.TRUE);
-        props.put("Confession", "I, Chinomso Ikwuagwu confess that Jesus Christ is my Lord and Saviour. Jesus died to pay the price for sin for me and all mankind and I receive the gift of life from Him. Thank you God of Abraham, Isaac and Jacob!");
-        props.put("Date", new Date());
-        final Map wife = new HashMap();
-        wife.put("Name", "Helen Ikwuagwu");
-        wife.put("Married", "true");
-        wife.put("Alive", Boolean.TRUE);
-        wife.put("Confession", "I, Helen Ikwuagwu confess that Jesus Christ is my Lord and Saviour. Jesus died to pay the price for sin for me and all mankind and I receive the gift of life from Him. Thank you God of Abraham, Isaac and Jacob!");
-        wife.put("Date", new Date());
-//        wife.put("Husband", props);
-        props.put("Wife", wife);
+        final Supplier<String> msgSup = () -> {
+System.out.println("-------------- ABC ");            
+            final String msg = "1" + "2" + "3";
+System.out.println("-------------- DEF ");            
+            return msg;
+        };
         
-        final TypeProvider typeProvider = new TypeProvider(){
-                    @Override
-                    public Class getType(String name, Object value, Class outputIfNone) {
-                        switch(name) {
-                            case "Married": return Boolean.class;
-                            default: return value == null ? String.class : value.getClass();
-                        }
-                    }
-                };        
+        LOGGER.log(Level.FINE, msgSup);
         
-        final ComponentModel cm = new ComponentModelImpl(null, new SelectionContext(){
-                    @Override
-                    public Selection[] getSelectionValues(Class entityType) {
-                        return new Selection[0];
-                    }
-                    @Override
-                    public String getSelectionColumn(Class entityType, String outputIfNone) {
-                        return outputIfNone;
-                    }
-
-                }, new DateFromUIBuilderImpl(), new DateUIUpdaterImpl());
+        if(true) {
+            return;
+        }
         
-        final UIBuilder<Map, Container> uiBuilder = new UIBuilderFromMap();
+        final JTable table = new JTable() {
+            
+        };
         
-        final Container ui = uiBuilder
-                .source(props)
-                .typeProvider(typeProvider)
-                .entryUIProvider(new EntryUIProviderImpl(cm, -1))
-                .build();
+        print(table.getClass());
         
-        JFrame frame = new JFrame();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.getContentPane().add(ui);
-        frame.pack();
-        frame.setVisible(true);
+        print(Bcappbase.class);
+        
+        print(LocalClass.class);
+        
+        print(InnerClass.class);
+        
+        final Path path = Paths.get(System.getProperty("user.home"), "folder", "file.extension");
+System.out.println(path.toString()) ;       
+System.out.println(path.toUri());
+System.out.println(path.toUri().toURL());
+    }
+    
+    public static void print(Class cls) {
+        System.out.println("Class name: "+cls.getName()+", super: "+cls.getSuperclass().getName()+
+                ", enclosing: "+cls.getEnclosingClass()+ ", anon: "+cls.isAnonymousClass()+
+                ", local: "+cls.isLocalClass()+", member: "+cls.isMemberClass()+
+                ", synthetic: "+cls.isSynthetic()+", primitive: "+cls.isPrimitive());
     }
 
 }

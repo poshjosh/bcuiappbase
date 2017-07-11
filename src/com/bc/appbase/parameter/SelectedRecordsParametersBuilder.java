@@ -20,6 +20,7 @@ import com.bc.appbase.App;
 import com.bc.appbase.ui.SearchResultsPanel;
 import com.bc.appbase.ui.actions.ParamNames;
 import com.bc.appcore.AppCore;
+import com.bc.appcore.exceptions.SearchResultsNotFoundException;
 import com.bc.appcore.jpa.model.ResultModel;
 import com.bc.appcore.parameter.ParametersBuilder;
 import com.bc.jpa.search.SearchResults;
@@ -98,7 +99,7 @@ public class SelectedRecordsParametersBuilder implements ParametersBuilder<Searc
                 selectedTaskids[i] = id;
             }
             
-            params.put(ParamNames.RESULT_TYPE, entityType);
+            params.put(ParamNames.ENTITY_TYPE, entityType);
             
             params.put(idColumnName+"List", Arrays.asList(selectedTaskids));
             
@@ -119,7 +120,12 @@ public class SelectedRecordsParametersBuilder implements ParametersBuilder<Searc
     }
     
     private Object getEntity(int tableRowIndex) {
-        final SearchResults searchResults = ((App)app).getUIContext().getLinkedSearchResults(searchResultsPanel);
+        final SearchResults searchResults;
+        try{
+            searchResults = ((App)app).getUIContext().getLinkedSearchResults(searchResultsPanel);
+        }catch(SearchResultsNotFoundException e) {
+            throw new RuntimeException(e);
+        }
         final List currentpage = searchResults.getCurrentPage();
         if(tableRowIndex < currentpage.size()) {
             return currentpage.get(tableRowIndex);

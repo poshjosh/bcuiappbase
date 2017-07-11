@@ -23,15 +23,38 @@ public interface ParamNames {
     
     String LOOK_AND_FEEL_NAME = SetLookAndFeel.LOOK_AND_FEEL_NAME;
     
-    String RESULT_TYPE = "resultType";
+    String EDITABLE = "editable";
+
+    String CONTENT_TYPE = "contentType";
+    
+    String TEXT = "text";
+
+    String ENTITY_TYPE = "entityType";
+    
+    String SEARCH_RESULTS = "searchResults";
+    
+    String RESULT_MODEL = "resultModel";
+    
+    String COLUMN_NAME = "columnName";
     
     String DATA = "data";
 
     String APPEND = "append";
 
-    String TITLE = DisplayDialog.TITLE;
+    String TITLE = "title";
+    
+    String ACTION_COMMAND = "actionCommand";
     
     String CURRENT_DIR = DisplayDialog.CURRENT_DIR;
     
     String DESCRIPTION_OF_FILE_TYPE = DisplayDialog.DESCRIPTION_OF_FILE_TYPE;
+
+    String SHEET_NAME = "sheetName";
+    
+    String SHEET = "sheet";
+    
+    String OFFSET = "offset";
+    String LIMIT = "limit";
+    
+    String INT_ARRAY = "intArray";
 }

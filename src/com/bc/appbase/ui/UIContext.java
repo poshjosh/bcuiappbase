@@ -16,9 +16,10 @@
 
 package com.bc.appbase.ui;
 
+import com.bc.appcore.exceptions.SearchResultsNotFoundException;
 import com.bc.appcore.jpa.model.ResultModel;
 import com.bc.jpa.search.SearchResults;
-import com.bc.table.cellui.ColumnWidths;
+import com.bc.ui.table.cell.ColumnWidths;
 import java.awt.Container;
 import java.awt.Font;
 import java.awt.Window;
@@ -31,43 +32,59 @@ import javax.swing.JTable;
 import javax.swing.table.TableModel;
 import java.awt.Component;
 import javax.swing.JComponent;
-import com.bc.appcore.jpa.SearchContext;
-import com.bc.table.cellui.TableCellUIFactory;
-import com.bc.table.cellui.TableCellUIUpdater;
+import com.bc.ui.table.cell.TableCellUIFactory;
+import com.bc.ui.table.cell.TableCellUIUpdater;
+import com.bc.ui.table.cell.TableCellDisplayFormat;
+import java.util.concurrent.Callable;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 10, 2017 3:17:53 PM
  */
-public interface UIContext { 
+public interface UIContext {
     
     void dispose();
     
+    void showProgressBarPercent(String msg, int val);
+    
+    void showProgressBar(String msg, int min, int val, int max);
+    
     Font getFont();
     
-    Font getFont(Object component);
+    Font getFont(Class<? extends Component> componentType);
     
-    Font getFont(Object component, Font outputIfNone);
+    Font getFont(Class<? extends Component> componentType, Font outputIfNone);
     
     ImageIcon getImageIcon();
     
-    TableCellUIFactory getTableCellUIFactory(ResultModel resultModel);
+    UIDisplayHandler getDisplayHandler();
     
-    TableCellUIUpdater getTableCellUIUpdater(ResultModel resultModel);
+    void setTableFont(JTable table);
+        
+    void scrollTo(JTable table, int start, int end);
     
-    ColumnWidths getColumnWidths(Class entityType, ColumnWidths outputIfNone);
+    TableCellUIFactory getTableCellUIFactory(TableModel tableModel, Class entityType, int serialColumnIndex);
     
-    ColumnWidths getColumnWidths(ResultModel resultModel);
+    TableCellDisplayFormat getTableCellDisplayFormat(int serialColumnIndex);
+        
+    TableCellUIUpdater getTableCellUIUpdater();
+    
+    ColumnWidths getColumnWidths();
     
     TableModel getTableModel(SearchResults searchResults, 
             ResultModel resultModel, int firstPage, int numberOfPages);
     
     MouseListener getMouseListener(Container container);
     
-    void updateTableUI(JTable table, TableModel tableModel, ResultModel resultModel);
+    void updateTableUI(JTable table, Class entityType, int serialColumnIndex);
     
     void addActionListeners(Container container, AbstractButton... buttons);
     
     ActionListener getActionListener(Container container, String actionCommand);
+    
+    ActionListener getActionListener(Callable action, String actionCommand, boolean async);
+    
+    ActionListener getActionListener(
+            Callable action, String actionCommand, int progressBarDelay, boolean async);
     
     boolean positionFullScreen(Component component);
     
@@ -79,26 +96,17 @@ public interface UIContext {
     
     JFrame getMainFrame();
     
-    <T> SearchResultsFrame createSearchResultsFrame(
-            SearchContext<T> searchContext, SearchResults<T> searchResults, 
-            String ID, int firstPage, int numberOfPages,
-            String msg, boolean emptyResultsAllowed);
-    
-    <T> Boolean loadSearchResultsUI(
-            SearchResultsPanel resultsPanel, SearchContext<T> searchContext, SearchResults<T> searchResults, 
-            String ID, int firstPage, int numberOfPages, boolean emptyResultsAllowed);
-    
     void linkWindowToSearchResults(Window window, SearchResults searchResults, String key);
     
-    SearchResults getLinkedSearchResults(JComponent component);
+    Container getLinkedComponent(SearchResults searchResults, Container outputIfNone);
+    
+    SearchResults getLinkedSearchResults(JComponent component) throws SearchResultsNotFoundException;
     
     SearchResults getLinkedSearchResults(JComponent component, SearchResults outputIfNone);
     
-    SearchResults getLinkedSearchResults(String key);
+    SearchResults getLinkedSearchResults(String key) throws SearchResultsNotFoundException;
     
     SearchResults getLinkedSearchResults(String key, SearchResults outputIfNone);
-    
-    void loadSearchResultsPages(SearchResultsPanel resultsPanel, SearchContext searchContext, int firstPage, int numberOfPages);    
     
     void showErrorMessage(Throwable t, Object message);
     

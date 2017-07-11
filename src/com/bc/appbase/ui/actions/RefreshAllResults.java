@@ -20,6 +20,7 @@ import com.bc.appbase.App;
 import com.bc.appbase.ui.Components;
 import com.bc.appbase.ui.SearchResultsPanel;
 import com.bc.appcore.actions.Action;
+import com.bc.appcore.actions.TaskExecutionException;
 import java.awt.Component;
 import java.awt.Container;
 import java.util.ArrayList;
@@ -39,7 +40,8 @@ public class RefreshAllResults extends RefreshResults implements Action<App, Obj
     private transient static final Logger logger = Logger.getLogger(RefreshAllResults.class.getName());
     
     @Override
-    public Object execute(final App app, final Map<String, Object> params) {
+    public Object execute(final App app, final Map<String, Object> params) 
+            throws TaskExecutionException {
         
         final List<SearchResultsPanel> list = new ArrayList(this.getSearchResultUIs(app));
         
@@ -51,7 +53,7 @@ public class RefreshAllResults extends RefreshResults implements Action<App, Obj
         
         logger.log(Level.FINE, "Refreshing {0} search results UI", list.size());
         
-        final Class entityType = (Class)params.get(ParamNames.RESULT_TYPE);
+        final Class entityType = (Class)params.get(ParamNames.ENTITY_TYPE);
 
         for(SearchResultsPanel ui : list) {
             

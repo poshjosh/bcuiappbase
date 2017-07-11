@@ -2,7 +2,7 @@
  * Copyright 2017 NUROX Ltd.
  *
  * Licensed under the NUROX Ltd Software License (the "License");
- * you may not use this file except in compliance source the License.
+ * you may not use this file except in compliance sourceData the License.
  * You may obtain a copy of the License at
  *
  *      http://www.looseboxes.com/legal/licenses/software.html
@@ -17,22 +17,23 @@
 package com.bc.appbase.ui.actions;
 
 import com.bc.appbase.App;
-import com.bc.appbase.ui.SimpleFrame;
-import com.bc.appbase.ui.builder.UIBuilder;
-import com.bc.appbase.ui.builder.impl.SettingsEntryUIProvider;
+import com.bc.appbase.ui.builder.UIBuilderFromMap;
+import com.bc.appbase.ui.builder.impl.SettingsFormEntryComponentModel;
 import com.bc.appcore.actions.Action;
-import com.bc.appcore.util.Expirable;
 import com.bc.appcore.util.Settings;
-import com.bc.appcore.util.SettingsTypeProvider;
+import com.bc.appcore.typeprovider.SettingsTypeProvider;
 import java.awt.Container;
-import java.awt.Font;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Apr 8, 2017 4:23:06 AM
  */
 public class DisplaySettingsUI implements Action<App, Boolean> {
+
+    private static final Logger logger = Logger.getLogger(DisplaySettingsUI.class.getName());
 
     @Override
     public Boolean execute(App app, Map<String, Object> params) 
@@ -40,23 +41,19 @@ public class DisplaySettingsUI implements Action<App, Boolean> {
 
         final Settings settings = app.getSettings();
         
-        final Container ui = (Container)app.get(UIBuilder.class)
-                .source(settings)
-                .entryUIProvider(new SettingsEntryUIProvider(app))
+        logger.log(Level.FINE, "Settings: {0}", settings);
+        
+        final Container ui = (Container)app.getOrException(UIBuilderFromMap.class)
+                .sourceData(new TreeMap(settings))
+                .entryUIProvider(new SettingsFormEntryComponentModel(app, -1))
                 .typeProvider(new SettingsTypeProvider(settings))
                 .build();
 
-        final SimpleFrame frame = new SimpleFrame(
-                "Edit Properties", app, ui, new Font(Font.MONOSPACED, Font.PLAIN, 18),
-                " Save Changes ", ActionCommands.UPDATE_SETTINGS_FROM_UI
-        );
+        app.getUIContext().getDisplayHandler().displayWithTopAndBottomActionButtons(
+                ui, "Edit Properties", "Save Changes", ActionCommands.UPDATE_SETTINGS_FROM_UI, false);
         
-        app.addExpirable(ui, Expirable.from(settings, 10, TimeUnit.MINUTES));
+        app.getExpirableAttributes().putFor(ui, settings);
         
-//        app.getUIContext().positionHalfScreenLeft(frame);
-        
-        frame.pack();
-        frame.setVisible(true);
         return Boolean.TRUE;
     }
 }

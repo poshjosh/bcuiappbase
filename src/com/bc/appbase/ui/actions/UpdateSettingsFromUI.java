@@ -20,18 +20,18 @@ import com.bc.appbase.App;
 import com.bc.appbase.ui.builder.FromUIBuilder;
 import com.bc.appcore.actions.Action;
 import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TargetNotFoundException;
 import com.bc.appcore.parameter.ParameterException;
-import com.bc.appcore.parameter.ParameterNotFoundException;
-import com.bc.appcore.util.Expirable;
 import com.bc.appcore.util.Settings;
 import java.awt.Window;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
+import com.bc.appcore.parameter.ParameterExtractor;
+import com.bc.appbase.ui.ComponentModel;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Apr 8, 2017 7:15:04 PM
@@ -44,13 +44,7 @@ public class UpdateSettingsFromUI implements Action<App, Boolean> {
     public Boolean execute(App app, Map<String, Object> params) 
             throws ParameterException, TaskExecutionException {
 
-        final Optional optional = params.values().stream().filter((value) -> value instanceof JComponent).findFirst();
-        
-        if(!optional.isPresent()) {
-            throw new ParameterNotFoundException();
-        }
-        
-        final JComponent ui = (JComponent)optional.get();
+        final JComponent ui = app.getOrException(ParameterExtractor.class).getFirstValue(params, JComponent.class);
         
         final Window window = (Window)ui.getTopLevelAncestor();
         
@@ -58,17 +52,10 @@ public class UpdateSettingsFromUI implements Action<App, Boolean> {
             
             window.setVisible(false);
             
-            final Expirable uiSourceExpirable = app.removeExpirable(ui, null);
-
-            if(uiSourceExpirable == null) {
-                throw new TaskExecutionException("Session has expired. Begin process afresh");
-            }
-
-            final Settings settings = (Settings)uiSourceExpirable.get();
+            final Settings settings = app.removeExpirable(Settings.class, ui);
             
-            final Map update = (Map)app.get(FromUIBuilder.class)
-//                    .componentModel(app.get(ComponentModel.class))
-                    .context(app)
+            final Map update = (Map)app.getOrException(FromUIBuilder.class)
+                    .componentModel(app.getOrException(ComponentModel.class))
                     .filter(FromUIBuilder.Filter.ACCEPT_UPDATES_ONLY)
                     .ui(ui)
                     .source(settings)
@@ -83,7 +70,7 @@ public class UpdateSettingsFromUI implements Action<App, Boolean> {
             
                 app.getUIContext().showSuccessMessage("SUCCESS");
             }
-        }catch(IOException e) {    
+        }catch(TargetNotFoundException | IOException e) {    
             throw new TaskExecutionException("Failed to save changes", e);
         }finally{
             window.dispose();

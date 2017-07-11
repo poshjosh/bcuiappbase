@@ -17,7 +17,7 @@
 package com.bc.appbase.ui.actions;
 
 import com.bc.appbase.App;
-import com.bc.appbase.ui.DialogManager;
+import com.bc.appbase.ui.dialog.DialogManager;
 import com.bc.appcore.actions.Action;
 import com.bc.appcore.actions.TaskExecutionException;
 import com.bc.appcore.parameter.InvalidParameterException;
@@ -33,7 +33,7 @@ import javax.swing.JFileChooser;
  */
 public class DisplayDialog implements Action<App,File> {
     
-    public static final String TITLE = "title";
+    public static final String TITLE = ParamNames.TITLE;
     public static final String CURRENT_DIR = "currentDir";
     public static final String DESCRIPTION_OF_FILE_TYPE = "fileTypeDescription";
     
@@ -93,7 +93,7 @@ public class DisplayDialog implements Action<App,File> {
         };
         
         final String title = (String)params.getOrDefault(TITLE, "");
-        final DialogManager dialogManager = app.get(DialogManager.class);
+        final DialogManager dialogManager = app.getOrException(DialogManager.class);
         final JFileChooser fileChooser = dialogManager.getFileChooser(
                 this.dialogType, title, fileFilter, this.fileSelectionMode);
         
@@ -129,6 +129,7 @@ public class DisplayDialog implements Action<App,File> {
         }else{
             throw new InvalidParameterException(CURRENT_DIR);
         }
+
         return currentDir;
     }
 }

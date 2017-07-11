@@ -2,7 +2,7 @@
  * Copyright 2017 NUROX Ltd.
  *
  * Licensed under the NUROX Ltd Software License (the "License");
- * you may not use this file except in compliance source the License.
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  *      http://www.looseboxes.com/legal/licenses/software.html
@@ -16,21 +16,29 @@
 
 package com.bc.appbase.ui.builder;
 
-import com.bc.appcore.TypeProvider;
+import com.bc.appbase.ui.ComponentModel;
+import com.bc.appcore.jpa.SelectionContext;
+import com.bc.appcore.typeprovider.MemberTypeProvider;
 import java.awt.Component;
 
 /**
- * @author Chinomso Bassey Ikwuagwu on Mar 22, 2017 1:36:32 PM
+ * @author Chinomso Bassey Ikwuagwu on May 26, 2017 9:47:16 PM
  */
 public interface UIBuilder<I, O extends Component> {
     
-    UIBuilder<I, O> source(I source);
+    UIBuilder<I, O> sourceType(Class sourceType);
     
-    UIBuilder<I, O> target(O target);
+    UIBuilder<I, O> sourceData(I sourceData);
     
-    UIBuilder<I, O> typeProvider(TypeProvider typeProvider);
+    UIBuilder<I, O> targetUI(O target);
     
-    UIBuilder<I, O> entryUIProvider(EntryUIProvider entryUIProvider);
+    UIBuilder<I, O> selectionContext(SelectionContext selectionContext);
+    
+    UIBuilder<I, O> typeProvider(MemberTypeProvider typeProvider);
+    
+    UIBuilder<I, O> entryUIProvider(ComponentModel componentModel);
+    
+    UIBuilder<I, O> editable(Boolean editable);
     
     boolean isBuilt();
     

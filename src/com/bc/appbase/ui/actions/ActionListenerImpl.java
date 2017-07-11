@@ -16,63 +16,56 @@
 
 package com.bc.appbase.ui.actions;
 
-import com.bc.appcore.actions.Action;
-import com.bc.appcore.parameter.ParameterException;
-import com.bc.appcore.parameter.ParametersBuilder;
-import java.awt.Container;
+import com.bc.appbase.App;
+import com.bc.util.Util;
+import java.awt.Cursor;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Objects;
-import com.bc.appbase.App;
-import com.bc.appcore.actions.TaskExecutionException;
-
+import javax.swing.JFrame;
 
 /**
- * @author Chinomso Bassey Ikwuagwu on Feb 8, 2017 9:59:13 PM
+ * @author Chinomso Bassey Ikwuagwu on Jul 9, 2017 8:07:16 PM
  */
 public class ActionListenerImpl implements ActionListener {
 
     private final App app;
     
-    private final Container container;
+    private final Callable action;
     
     private final String actionCommand;
     
-    public ActionListenerImpl(App app, Container container, String actionCommand) {
-        this.app = Objects.requireNonNull(app);
-        this.container = Objects.requireNonNull(container);
-        this.actionCommand = Objects.requireNonNull(actionCommand);
+    private final int progressBarDelay;
+    
+    private final boolean async;
+    
+    private final AtomicBoolean completed = new AtomicBoolean(false);
+    
+    public ActionListenerImpl(App app, Callable action) {
+        this(app, action, action.getClass().getName(), 500, true);
     }
     
-    private final class WorkerThread extends Thread{
-        private final String ACTION_COMMAND;
-        public WorkerThread(String actionCommand) {
-            super(actionCommand + "_Thread");
-            this.ACTION_COMMAND = actionCommand;
-        }
-        @Override
-        public void run() {
-            try {
-
-                final ParametersBuilder paramsBuilder = 
-                        app.getParametersBuilder(container, ACTION_COMMAND);
-
-                final Map<String, Object> params = paramsBuilder.context(app).with(container).build();
-
-                final Action<App, ?> action = app.getAction(ACTION_COMMAND);
-
-                action.execute(app, params);
-
-            }catch(ParameterException | TaskExecutionException | RuntimeException e) {
-
-                handleException(e, "Exception executing action command: " + getLabel(ACTION_COMMAND, ACTION_COMMAND));
-            }
-        }
+    public ActionListenerImpl(
+            App app, Callable action, String actionCommand, boolean async) {
+        this(app, action, actionCommand, 500, async);
     }
-
+    
+    public ActionListenerImpl(
+            App app, Callable action, String actionCommand, int progressBarDelay, boolean async) {
+        this.app = Objects.requireNonNull(app);
+        this.action = Objects.requireNonNull(action);
+        this.actionCommand = Objects.requireNonNull(actionCommand);
+        this.progressBarDelay = progressBarDelay;
+        this.async = async;
+    }
+    
     @Override
     public void actionPerformed(final ActionEvent actionEvent) {
         
@@ -80,15 +73,78 @@ public class ActionListenerImpl implements ActionListener {
             
             final String ACTION_COMMAND = actionEvent.getActionCommand();
             
-            if(!this.actionCommand.equals(ACTION_COMMAND)) {
-                return;
+            if(!Objects.equals(this.actionCommand, ACTION_COMMAND)) {
+                
+                throw new IllegalStateException("Unexpected action command: " + ACTION_COMMAND);
             }
             
-            new WorkerThread(ACTION_COMMAND).start();
+            try {
+                
+                if(async) {
+                    new Thread(actionCommand + "_ActionCommand_Thread"){
+                        @Override
+                        public void run() {
+                            try{
+                                execute();
+                            }catch(Exception e) {
+                                handleException(e, "Exception executing action command: " + getLabel(actionCommand, actionCommand));
+                            }
+                        }
+                    }.start();
+                }else{
+                    this.execute();
+                }
+                
+            }catch(Exception e) {
+                handleException(e, "Exception executing action command: " + getLabel(actionCommand, actionCommand));
+            }
             
         }catch(RuntimeException e) {
             
             handleException(e, "An unexpected error occured");
+        }
+    }
+    
+    private void execute() throws Exception {
+        final JFrame frame = app.getUIContext().getMainFrame();
+        try{
+            this.beginProgress(frame);
+            action.call();
+        }finally{
+            this.completeProgress(frame);
+        }
+    }
+    
+    private void beginProgress(JFrame frame) {
+        
+        final ScheduledExecutorService execSvc = Executors.newSingleThreadScheduledExecutor();
+
+        execSvc.schedule(() -> {
+
+            execSvc.shutdown();
+
+            synchronized(completed) {
+                if(!completed.get()) {
+                    app.getUIContext().showProgressBarPercent("Please wait", -1);
+                }
+                Util.shutdownAndAwaitTermination(execSvc, 500, TimeUnit.MILLISECONDS);
+            }
+        }, progressBarDelay, TimeUnit.MILLISECONDS);
+
+        if(frame != null) {
+            frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        }
+    }
+    
+    private void completeProgress(JFrame frame) {
+        
+        if(frame != null) {
+            frame.setCursor(null);
+        }
+
+        synchronized(completed) {
+            completed.set(true);
+            app.getUIContext().showProgressBarPercent("Done", 100);
         }
     }
     

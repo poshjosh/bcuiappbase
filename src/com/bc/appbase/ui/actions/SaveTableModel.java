@@ -16,21 +16,32 @@
 package com.bc.appbase.ui.actions;
 
 import com.bc.appcore.actions.Action;
-import com.bc.table.cellui.ColumnWidths;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import javax.swing.table.TableModel;
 import jxl.write.WriteException;
 import com.bc.appbase.ui.WritableAwtFont;
-import com.bc.appbase.excel.WriteExcel;
+import com.bc.appbase.xls.impl.TableModelExcelWriter;
 import java.awt.Font;
 import com.bc.appbase.App;
+import com.bc.appbase.ui.table.model.DisplayTableModelFromModel;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import jxl.Workbook;
+import jxl.WorkbookSettings;
+import jxl.write.WritableWorkbook;
+import com.bc.ui.table.cell.TableCellDisplayFormat;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Mar 2, 2017 2:06:21 PM
  */
 public class SaveTableModel implements Action<App, File> {
+
+    private static final Logger logger = Logger.getLogger(SaveTableModel.class.getName());
     
     @Override
     public File execute(App app, Map<String, Object> params) 
@@ -60,15 +71,12 @@ public class SaveTableModel implements Action<App, File> {
             
             final Boolean append = params.get(ParamNames.APPEND) == null ? Boolean.FALSE : (Boolean)params.get(ParamNames.APPEND);
             
-            final WriteExcel writeExcel = new WriteExcel(
+            final TableModelExcelWriter writeExcel = new TableModelExcelWriter(
                     app.getDateTimeFormat(), 
                     new WritableAwtFont(headerFont), 
                     new WritableAwtFont(font));
             
-            final ColumnWidths columnWidths = 
-                    app.getUIContext().getColumnWidths(app.getSearchContext(null).getResultModel());
-            
-            writeExcel.write(file, data, columnWidths, append);
+            this.write(app, writeExcel, file, data, append);
 
         }catch(IOException | WriteException e) {
 
@@ -77,4 +85,53 @@ public class SaveTableModel implements Action<App, File> {
         
         return file;
     }
+
+    public Map<String, Integer> write(
+            App app, TableModelExcelWriter writeExcel, File file, Map<String, TableModel> data, boolean append) 
+            throws IOException, WriteException {
+
+        if(logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "Append: {0}, file: {1}", 
+                    new Object[]{append, file});
+        }
+        
+        final WorkbookSettings wbSettings = new WorkbookSettings();
+
+        wbSettings.setLocale(new Locale("en", "EN"));
+        
+        Map<String, Integer> output = new HashMap();
+
+        WritableWorkbook workbook = null;
+        try{
+
+            workbook = Workbook.createWorkbook(file, wbSettings);
+            
+            final Set<String> sheetNames = data.keySet();
+
+            logger.log(Level.FINE, "Sheet names: {0}", sheetNames);
+
+            final TableCellDisplayFormat cellDisplayFormat = app.getUIContext().getTableCellDisplayFormat(-1);
+            
+            for(String sheetName : sheetNames) {
+            
+                final TableModel tableModel = data.get(sheetName);
+                
+                final Integer written = writeExcel.write(workbook, sheetName, 
+                        new DisplayTableModelFromModel(tableModel, cellDisplayFormat), 
+                        app.getUIContext().getColumnWidths(), append);
+                
+                output.put(sheetName, written);
+            }        
+
+            workbook.write();
+
+        }finally{
+            if(workbook != null) {
+                workbook.close();
+            }
+        }
+
+        return output;
+    }
+    
 }

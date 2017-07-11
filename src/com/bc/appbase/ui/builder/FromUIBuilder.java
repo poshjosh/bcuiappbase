@@ -16,7 +16,6 @@
 
 package com.bc.appbase.ui.builder;
 
-import com.bc.appbase.App;
 import com.bc.appbase.ui.ComponentModel;
 import java.awt.Component;
 import java.util.Objects;
@@ -40,9 +39,17 @@ public interface FromUIBuilder<I extends Component, O> {
         boolean accept(Object container, Object key, Object oldValue, Object newValue);
     }
     
-    FromUIBuilder<I, O> filter(FromUIBuilder.Filter filter);
+    interface Formatter {
+        Formatter NO_OP = new Formatter() {
+            @Override
+            public Object format(Object container, Object key, Object oldValue, Object newValue) { return newValue; }
+        };
+        Object format(Object container, Object key, Object oldValue, Object newValue);
+    }
     
-    FromUIBuilder<I, O> context(App context);
+    FromUIBuilder<I, O> filter(FromUIBuilder.Formatter formatter);
+    
+    FromUIBuilder<I, O> filter(FromUIBuilder.Filter filter);
     
     FromUIBuilder<I, O> source(O source);
     
@@ -51,6 +58,8 @@ public interface FromUIBuilder<I extends Component, O> {
     FromUIBuilder<I, O> target(O target);
     
     FromUIBuilder<I, O> componentModel(ComponentModel cm);
+    
+//    FromUIBuilder<I, O> selectionContext(SelectionContext selectionContext);
     
     boolean isBuilt();
     

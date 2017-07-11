@@ -17,12 +17,10 @@
 package com.bc.appbase.ui.actions;
 
 import com.bc.jpa.search.SearchResults;
-//import com.bc.appbase.pu.entities.Task;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
 import com.bc.appbase.App;
+import com.bc.appbase.ui.ResultsFrame;
+import com.bc.appbase.ui.UIContext;
+import com.bc.appcore.jpa.SearchContext;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 17, 2017 1:40:15 PM
@@ -53,27 +51,22 @@ public class ExecuteSelectQuery extends AbstractExecuteQuery {
         
         msg.append("</html>");
         
-        if(SwingUtilities.isEventDispatchThread()) {
-            this.createAndShowSearchResultsFrame(app, searchResults, resultType, KEY, msg);
-        }else{
-            java.awt.EventQueue.invokeLater(() -> {
-                try{
-                    createAndShowSearchResultsFrame(app, searchResults, resultType, KEY, msg);
-                }catch(RuntimeException e) {
-                    Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Unexpected exception", e);
-                }
-            });
-        }
+        createAndShowSearchResultsFrame(app, searchResults, resultType, KEY, msg);
         
         return SIZE;
     }
     
     private void createAndShowSearchResultsFrame(
             App app, SearchResults searchResults, Class resultType, String KEY, Object msg) {
-        JFrame frame = app.getUIContext().createSearchResultsFrame(
-                app.getSearchContext(resultType), searchResults, KEY, 0, 1, msg.toString(), false);
-        app.getUIContext().positionHalfScreenRight(frame);
-        frame.pack();
+        
+        final ResultsFrame frame = new ResultsFrame();
+        
+        final UIContext uiContext = app.getUIContext();
+        
+        final SearchContext searchContext = app.getSearchContext(resultType);
+        
+        frame.loadSearchResults(uiContext, searchContext, searchResults, KEY, msg, false, false);
+        
         frame.setVisible(true);
     }
     

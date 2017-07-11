@@ -24,6 +24,8 @@ import java.awt.Container;
 import java.util.Map;
 import javax.swing.JTable;
 import com.bc.appbase.App;
+import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.SearchResultsNotFoundException;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 22, 2017 11:59:03 AM
@@ -41,11 +43,17 @@ public class NextResult implements Action<App, JTable> {
             parent = parent.getParent();
         }
 
-        final SearchResults searchResults = app.getUIContext().getLinkedSearchResults(table);
-        
-        final int nextPage = searchResults.getPageNumber() + 1;
-        
-        app.getUIContext().loadSearchResultsPages((SearchResultsPanel)parent, app.getSearchContext(null), nextPage, 1);
+        try{
+            
+            final SearchResults searchResults = app.getUIContext().getLinkedSearchResults(table);
+
+            final int nextPage = searchResults.getPageNumber() + 1;
+
+            ((SearchResultsPanel)parent).loadSearchResultsPages(app.getUIContext(), app.getSearchContext(null), nextPage, 1);
+            
+        }catch(SearchResultsNotFoundException e) {
+            throw new TaskExecutionException(e);
+        }
         
         return table;
     }

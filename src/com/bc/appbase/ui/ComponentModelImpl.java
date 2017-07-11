@@ -16,28 +16,32 @@
 
 package com.bc.appbase.ui;
 
-import com.bc.appbase.App;
+import com.bc.appcore.ObjectFactory;
 import com.bc.appcore.util.Selection;
 import com.bc.appcore.jpa.SelectionContext;
-import com.bc.appcore.util.SelectionImpl;
-import com.bc.table.cellui.TableCellTextArea;
-import com.bc.table.cellui.TestSubClass;
+import com.bc.appcore.util.SelectionValues;
+import com.bc.ui.table.cell.TableCellTextArea;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.ItemSelectable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JList;
-import javax.swing.JScrollPane;
+import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.text.JTextComponent;
@@ -49,77 +53,49 @@ public class ComponentModelImpl implements ComponentModel {
 
     private static final Logger logger = Logger.getLogger(ComponentModelImpl.class.getName());
     
-    private final App app;
-    
-    private final SelectionContext selectionContext;
+    private final SelectionValues selectionValues;
     
     private final DateFromUIBuilder dateFromUIBuilder;
     
     private final DateUIUpdater dateUIUpdater;
+    
+    private final ComponentProperties componentProperties;
 
-    private final Font font;
-    
-    private final int width;
-    
-    private final int height;
-    
     private final int contentLengthAboveWhichTextAreaIsUsed;
     
-    private final BiFunction<Class, Class, Boolean> subClassTest;
-    
-    public ComponentModelImpl(App app) {
-        this(app, app.get(SelectionContext.class), app.get(DateFromUIBuilder.class), app.get(DateUIUpdater.class));
+    public ComponentModelImpl(ObjectFactory objectFactory) {
+        this(objectFactory.getOrException(SelectionContext.class), 
+                objectFactory.getOrException(DateFromUIBuilder.class), objectFactory.getOrException(DateUIUpdater.class));
     }
     
-    public ComponentModelImpl(
-            App app, SelectionContext selectionContext, DateFromUIBuilder dateFromUIBuilder, DateUIUpdater dateUIUpdater) {
-        this(app, selectionContext, dateFromUIBuilder, dateUIUpdater, new Font(Font.MONOSPACED, Font.PLAIN, EntryPanel.deriveFontSize(40)), -1, 40, 50);
+    public ComponentModelImpl(SelectionValues selectionValues, 
+            DateFromUIBuilder dateFromUIBuilder, DateUIUpdater dateUIUpdater) {
+        this(selectionValues, dateFromUIBuilder, dateUIUpdater, 
+                ComponentModel.ComponentProperties.DEFAULT, 50);
     }
     
-    public ComponentModelImpl(
-            App app, SelectionContext selectionContext, DateFromUIBuilder dateFromUIBuilder, DateUIUpdater dateUIUpdater, 
-            Font font, int width, int height, int contentLengthAboveWhichTextAreaIsUsed) {
-        this.app = app;
-        this.selectionContext = Objects.requireNonNull(selectionContext);
+    public ComponentModelImpl(SelectionValues selectionValues, 
+            DateFromUIBuilder dateFromUIBuilder, DateUIUpdater dateUIUpdater, 
+            ComponentProperties componentProperties, int contentLengthAboveWhichTextAreaIsUsed) {
+        this.selectionValues = Objects.requireNonNull(selectionValues);
         this.dateFromUIBuilder = Objects.requireNonNull(dateFromUIBuilder);
+        this.dateFromUIBuilder.defaultHousrs(0).defaultMinutes(0);
         this.dateUIUpdater = Objects.requireNonNull(dateUIUpdater);
-        this.font = Objects.requireNonNull(font);
-        this.width = width;
-        this.height = height;
+        this.componentProperties = Objects.requireNonNull(componentProperties);
         this.contentLengthAboveWhichTextAreaIsUsed = contentLengthAboveWhichTextAreaIsUsed;
-        this.subClassTest = new TestSubClass();
     }
 
     @Override
-    public Component getComponent(Class valueType, String name, Object value) {
-        final Component component;
-        Selection [] values;
-        if (valueType == Boolean.class || valueType == boolean.class) {
-            final JCheckBox checkBox = new JCheckBox();
-            component = checkBox;
-        }else if(this.subClassTest.apply(valueType, Date.class)) {
-            final DateTimePanel datePanel = new DateTimePanel(font, this.height, 78, this.height, 4);
-            component = datePanel;
-        }else if((values = selectionContext.getSelectionValues(valueType)).length > 0) {
-            
-            if(logger.isLoggable(Level.FINER)) {
-                logger.log(Level.FINER, "Value type: {0}, {1}={2}\nSelection values: {3}", 
-                        new Object[]{valueType.getName(), name, value, values==null?null:Arrays.toString(values)});
-            }
-            
-            final JComboBox<Selection> comboBox = new JComboBox<>(values);
-            component = comboBox;
-            if(value != null) {
-                for(Selection selection : values) {
-                    if(value.equals(selection.getValue())) {
-                        comboBox.setSelectedItem(selection);
-                        break;
-                    }
-                }
-            }
-        }else{
-            component = this.getTextComponent(valueType, name, value);
-        }
+    public ComponentModel deriveNewFrom(ComponentProperties properties) {
+        return new ComponentModelImpl(this.selectionValues, 
+                this.dateFromUIBuilder, this.dateUIUpdater, properties, 
+                this.contentLengthAboveWhichTextAreaIsUsed);
+    }
+
+    @Override
+    public Component getComponent(Class parentType, Class valueType, String name, Object value) {
+//System.out.println(valueType.getSimpleName()+' '+name+'='+value+". @"+this.getClass());                
+        final Component component = this.doGetComponent(parentType, valueType, name, value);
         
         component.setName(name);
         
@@ -129,18 +105,63 @@ public class ComponentModelImpl implements ComponentModel {
             logger.log(Level.FINER, "Name: {0}, value type: {1}, component type: {2}", 
                     new Object[]{name, valueType==null?null:valueType.getName(), component.getClass().getName()});
         }
+        
         return component;
     }
     
+    protected Component doGetComponent(Class parentType, Class valueType, String name, Object value) {
+        
+        final Component component;
+        
+        List<Selection> selectionList;
+        
+        if (valueType == Boolean.class || valueType == boolean.class) {
+            
+            component = this.getBooleanComponent(valueType, name, value);
+            
+        }else if(Date.class.isAssignableFrom(valueType)) {
+            
+            component = this.getDateTimeComponent(valueType, name, value);
+            
+        }else if( ! (selectionList = this.getSelectionValues(valueType)).isEmpty()) {
+            
+            if(logger.isLoggable(Level.FINER)) {
+                logger.log(Level.FINER, "Value type: {0}, {1}={2}\nSelection values: {3}", 
+                        new Object[]{valueType.getName(), name, value, selectionList});
+            }
+            
+            component = this.getSelectionComponent(valueType, name, value, selectionList);
+            
+        }else{
+            
+            component = this.getTextComponent(valueType, name, value);
+        }
+        
+        final ComponentProperties props = this.getComponentProperties();
+        component.setFont(props.getFont(component));
+        
+        if(props.getWidth(component) > 0) {
+            component.setPreferredSize(new Dimension(props.getWidth(component), props.getHeight(component)));
+        }
+        
+        component.setEnabled(props.isEnabled(component));
+
+        return component;
+    }
+
     @Override
-    public Object getValue(Component component) {
-        return this.getValue(component, null);
+    public List<Selection> getSelectionValues(Class valueType) {
+        final List<Selection> values = selectionValues.getSelectionValues(valueType);
+        return values;
     }
     
     @Override
-    public <T> T getValue(Component component, Class<T> type) {
+    public Object getValue(Component component, Object outputIfNone) {
+        
         Objects.requireNonNull(component);
-        final Object value;
+        
+        Object value;
+        
         if(component instanceof JTextComponent) {
             value = ((JTextComponent)component).getText();
         }else if(component instanceof AbstractButton) {
@@ -149,73 +170,166 @@ public class ComponentModelImpl implements ComponentModel {
             value = dateFromUIBuilder.ui(component).build(null);
         }else if(component instanceof ItemSelectable) {
             final Object [] selected = ((ItemSelectable)component).getSelectedObjects();
-            value = selected == null || selected.length == 0 ? null : 
-                    selected[0] instanceof Selection ? ((Selection)selected[0]).getValue() : selected[0];
+            value = selected == null ? null : this.getValue(Arrays.asList(selected));
         }else if(component instanceof JList) {
-            final Object selected = ((JList)component).getSelectedValue();
-            value = selected == null ? null : 
-                    selected instanceof Selection ? ((Selection)selected).getValue() : selected;
+            final List selected = ((JList)component).getSelectedValuesList();
+            value = this.getValue(selected);
+        }else if(component instanceof JCheckBoxMenuItemListComboBox) {
+            final JCheckBoxMenuItemListComboBox comboBox = (JCheckBoxMenuItemListComboBox)component;
+            final List selected = comboBox.getSelectedValuesList();
+            value = this.getValue(selected);
+        }else if(component instanceof Container) {
+            
+            final Container container = (Container)component;
+            final int count = container.getComponentCount();
+            final Map map = new LinkedHashMap(count * 2, 0.75f);
+            for(int i=0; i<count; i++) {
+                final Component c = container.getComponent(i);
+                if(c.getName() != null) {
+                    map.put(c.getName(), this.getValue(c, null));
+                }
+            }
+            
+            value = map;
+            
         }else{
-            throw new UnsupportedOperationException("Unsupported UI component type: "+component.getClass().getName());
+            
+            value = outputIfNone;
         }
-        return (T)value;
+        
+        value = this.format(value);
+//System.out.println(component.getClass().getName() + ", value: " + value + ". @" + this.getClass());        
+        return value;
+    }
+    
+    private Object getValue(List selected) {
+        final Object value;
+        if(selected == null) {
+            value = null;
+        }else if(selected.size() == 1) {
+            value = this.toActualValue(selected.get(0));
+        }else{
+            value = this.toActualValues(selected);
+        }
+        return value;
+    }
+    
+    public List toActualValues(List selected) {
+        final List output;
+        if(selected == null || selected.isEmpty()) {
+            output = Collections.EMPTY_LIST;
+        }else{
+            output= new ArrayList(selected.size());
+            for(Object sel : selected) {
+                final Object actual = this.toActualValue(sel);
+                output.add(actual);
+            }
+        }
+        return output;
+    }
+    
+    public Object toActualValue(Object selected) {
+        final Object actual;
+        if(selected instanceof Selection) {
+            actual = ((Selection)selected).getValue();
+        }else{
+            actual = selected;
+        }
+        return actual;
     }
     
     @Override
     public Object setValue(Component component, Object value) {
+        
         Objects.requireNonNull(component);
+        
+        value = this.format(value);
+        
         if(component instanceof JTextComponent) {
+            
             ((JTextComponent)component).setText(value==null?null:String.valueOf(value));
+            
         }else if(component instanceof AbstractButton) {
             ((AbstractButton)component).setSelected(Boolean.valueOf(String.valueOf(value)));
         }else if(component instanceof DateTimePanel) {
+            final DateTimePanel dateTimePanel = (DateTimePanel)component;
             final Calendar cal = Calendar.getInstance();
             if(value != null) {
                 Date date = (Date)value;
                 cal.setTime(date);
+                this.dateUIUpdater.update(dateTimePanel, cal);
             }else{
-                cal.set(Calendar.DAY_OF_MONTH, 0);
-                cal.set(Calendar.HOUR_OF_DAY, 0);
-                cal.set(Calendar.MINUTE, 0);
-                cal.set(Calendar.SECOND, 0);
-                cal.set(Calendar.MILLISECOND, 0);
+                this.dateUIUpdater.updateMonth(dateTimePanel.getMonthCombobox(), cal);
+                this.dateUIUpdater.updateYear(dateTimePanel.getYearCombobox(), cal);
             }
-            dateUIUpdater.update((DateTimePanel)component, cal);
         }else if(component instanceof JComboBox) {
-            ((JComboBox)component).setSelectedItem(new SelectionImpl(component.getName(), value));
+            ((JComboBox)component).setSelectedItem(Selection.from(component.getName(), value));
         }else if(component instanceof JList) {
-            ((JList)component).setSelectedValue(new SelectionImpl(component.getName(), value), true);
+            ((JList)component).setSelectedValue(Selection.from(component.getName(), value), true);
+        }else if(component instanceof JCheckBoxMenuItemListComboBox) {
+            final JCheckBoxMenuItemListComboBox jx = (JCheckBoxMenuItemListComboBox)component;
+            jx.setSelectedValue(Selection.from(component.getName(), value));
         }else{
             throw new UnsupportedOperationException("Unsupported UI component type: "+component.getClass().getName());
         }
         return value;
     }
     
+    public Object format(Object value) {
+        if(value instanceof String) {
+            final String sval = (String)value;
+            value = sval.isEmpty() ? null : sval;
+        }
+        return value;
+    }
+     
+    public Component getBooleanComponent(Class valueType, String name, Object value) {
+        final JCheckBox component = new JCheckBox(valueType.getSimpleName());
+        return component;
+    }
+    
+    public Component getDateTimeComponent(Class valueType, String name, Object value) {
+        final JPanel panel = new JPanel();
+        final Font font = this.componentProperties.getFont(panel);
+        final int height = this.componentProperties.getHeight(panel);
+        final DateTimePanel dtp = new DateTimePanel(font, height, 78, height, 4);
+        for(Component c : dtp.getComponents()) {
+            if(c instanceof JTextField) {
+                final JTextField tf = ((JTextField)c);
+                tf.setEditable(this.componentProperties.isEditable(c));
+//System.out.println("Editable: "+tf.isEditable()+", component: "+tf.getClass().getName()+". @"+this.getClass());                                        
+            }
+        }
+        return dtp;
+    }
+    
+    public Component getSelectionComponent(Class valueType, 
+            String name, Object value, List<Selection> selectionList) {
+        final JComboBox component = new JComboBox(selectionList.toArray(new Selection[0]));
+        return component;
+    }
+    
     public Component getTextComponent(Class valueType, String name, Object value) {
-        final Component component;
+        final JTextComponent component;
         if(this.getDisplaySize(valueType, name, value) <= this.contentLengthAboveWhichTextAreaIsUsed) {
             component = this.getTextField(valueType, name, value);
         }else{
             component = this.getTextArea(valueType, name, value);
         }
+        
+        component.setEditable(this.componentProperties.isEditable(component));
+//System.out.println("Editable: "+component.isEditable()+", component: "+component.getClass().getName()+". @"+this.getClass());                                        
         return component;
     }
 
     public JTextField getTextField(Class valueType, String name, Object value) {
-        final JTextField textField = new JTextField();
-        textField.setOpaque(true);
-        return textField;
+        final JTextField component = new JTextField();
+        return component;
     }
     
     public JTextArea getTextArea(Class valueType, String name, Object value) {
         
         final JTextArea component = new TableCellTextArea();
-        final int scrollsHeight = 3 * this.height;
-        component.setFont(font);
-        final JScrollPane scrolls = new JScrollPane();
-        if(this.width > 0) {
-            scrolls.setPreferredSize(new Dimension(this.width, scrollsHeight));
-        }
         
         return component;
     }
@@ -226,12 +340,8 @@ public class ComponentModelImpl implements ComponentModel {
         return value == null ? -1 : value.toString().length();
     }
     
-    public BiFunction<Class, Class, Boolean> getSubClassTest() {
-        return subClassTest;
-    }
-
-    public SelectionContext getSelectionContext() {
-        return selectionContext;
+    public SelectionValues getSelectionValues() {
+        return selectionValues;
     }
 
     public DateFromUIBuilder getDateFromUIBuilder() {
@@ -243,20 +353,10 @@ public class ComponentModelImpl implements ComponentModel {
     }
 
     @Override
-    public Font getFont() {
-        return font;
+    public ComponentProperties getComponentProperties() {
+        return componentProperties;
     }
-
-    @Override
-    public int getWidth() {
-        return width;
-    }
-
-    @Override
-    public int getHeight() {
-        return height;
-    }
-
+    
     public int getContentLengthAboveWhichTextAreaIsUsed() {
         return contentLengthAboveWhichTextAreaIsUsed;
     }

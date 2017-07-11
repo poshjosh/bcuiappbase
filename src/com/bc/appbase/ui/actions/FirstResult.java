@@ -22,6 +22,8 @@ import java.awt.Container;
 import java.util.Map;
 import javax.swing.JTable;
 import com.bc.appbase.App;
+import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.SearchResultsNotFoundException;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 24, 2017 8:32:10 AM
@@ -29,8 +31,7 @@ import com.bc.appbase.App;
 public class FirstResult implements Action<App, JTable> {
 
     @Override
-    public JTable execute(App app, Map<String, Object> params) 
-            throws com.bc.appcore.actions.TaskExecutionException {
+    public JTable execute(App app, Map<String, Object> params) throws TaskExecutionException {
 
         final JTable table = (JTable)params.get(JTable.class.getName());
         
@@ -39,7 +40,11 @@ public class FirstResult implements Action<App, JTable> {
             parent = parent.getParent();
         }
         
-        app.getUIContext().loadSearchResultsPages((SearchResultsPanel)parent, app.getSearchContext(null), 0, 1);
+        try{
+            ((SearchResultsPanel)parent).loadSearchResultsPages(app.getUIContext(), app.getSearchContext(null), 0, 1);
+        }catch(SearchResultsNotFoundException e) {
+            throw new TaskExecutionException(e);
+        }
         
         return table;
     }
