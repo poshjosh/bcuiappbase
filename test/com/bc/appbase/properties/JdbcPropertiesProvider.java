@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.bc.appbase.ui.table.model;
+package com.bc.appbase.properties;
+
+import java.util.Properties;
+import java.util.function.Function;
 
 /**
- * @author Chinomso Bassey Ikwuagwu on May 20, 2017 1:13:58 PM
+ * @author Chinomso Bassey Ikwuagwu on Aug 12, 2017 11:37:41 AM
  */
-public interface XYValues<X, Y, Z> {
+public interface JdbcPropertiesProvider extends Function<String, Properties> {
 
-    Z getValue(X xValue, Y yValue);
 }

@@ -17,28 +17,21 @@
 package com.bc.appbase;
 
 import com.bc.appbase.parameter.SelectedRecordsParametersBuilder;
-import com.bc.appcore.jpa.SearchContextImpl;
-import com.bc.appcore.parameter.ParametersBuilder;
-import com.bc.appbase.ui.UIContexBase;
-import com.bc.appcore.jpa.model.ResultModel;
 import java.util.Objects;
 import java.util.logging.Logger;
-import com.bc.appcore.jpa.SearchContext;
 import com.bc.appbase.ui.MainFrame;
 import com.bc.appbase.ui.SearchResultsPanel;
 import com.bc.appbase.ui.UIContext;
+import com.bc.appbase.ui.UIContextBase;
 import com.bc.appbase.ui.actions.ActionCommands;
 import com.bc.appcore.AbstractAppCore;
-import com.bc.appcore.util.ExpirableCache;
-import com.bc.config.Config;
-import com.bc.config.ConfigService;
-import com.bc.jpa.JpaContext;
-import com.bc.jpa.sync.JpaSync;
-import com.bc.jpa.sync.SlaveUpdates;
-import java.util.Properties;
-import com.bc.appcore.Filenames;
+import com.bc.appcore.AppContext;
 import com.bc.appcore.ObjectFactory;
 import javax.swing.JFrame;
+import com.bc.appcore.parameter.ParametersBuilder;
+import java.net.URL;
+import java.util.Comparator;
+import javax.swing.ImageIcon;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 7, 2017 11:26:00 PM
@@ -48,13 +41,12 @@ public abstract class AbstractApp extends AbstractAppCore implements App {
     private transient static final Logger logger = Logger.getLogger(AbstractApp.class.getName());
     
     private UIContext ui;
-
-    public AbstractApp(
-            Filenames filenames, ConfigService configService, 
-            Config config, Properties settingsConfig, JpaContext jpaContext, 
-            SlaveUpdates slaveUpdates, JpaSync jpaSync, ExpirableCache expirableCache) {
-        super(filenames, configService, config, settingsConfig, 
-                jpaContext, slaveUpdates, jpaSync, expirableCache);
+    
+    private final AppContext appContext;
+    
+    public AbstractApp(AppContext appContext) {
+        super(appContext);
+        this.appContext = Objects.requireNonNull(appContext);
     }
     
     @Override
@@ -73,16 +65,29 @@ public abstract class AbstractApp extends AbstractAppCore implements App {
     }
     
     protected UIContext createUIContext() {
-        final MainFrame mainFrame = new MainFrame();
-        return new UIContexBase(this, null, mainFrame);
+        final MainFrame mainFrame = this.createMainFrame();
+        final URL iconURL = this.getIconURL();
+        final ImageIcon imageIcon = iconURL == null ? null : new ImageIcon(
+                iconURL, this.getImageIconDescription(iconURL));
+        return this.createUIContext(this, imageIcon, mainFrame);
+    }
+    
+    protected MainFrame createMainFrame() {
+        return new MainFrame();
+    }
+    
+    protected UIContext createUIContext(App app, ImageIcon imageIcon, JFrame mainFrame) {
+        return new UIContextBase(this, imageIcon, mainFrame);
     }
 
-    @Override
-    public <T> SearchContext<T> getSearchContext(Class<T> entityType) {
-        final ResultModel<T> resultModel = this.getResultModel(entityType, null);
-        return new SearchContextImpl<>(this, Objects.requireNonNull(resultModel), 20, true);
+    protected String getImageIconDescription(URL url) {
+        return url == null ? "" : url.toExternalForm();
     }
-
+    
+    protected URL getIconURL() {
+        return null;
+    }
+    
     @Override
     public UIContext getUIContext() {
         return ui;
@@ -106,5 +111,10 @@ public abstract class AbstractApp extends AbstractAppCore implements App {
         }        
 
         return builder;
+    }
+
+    @Override
+    public Comparator getEntityOrderComparator() {
+        return Comparator.naturalOrder();
     }
 }

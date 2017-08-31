@@ -90,10 +90,7 @@ public class TableModelExcelWriter {
             WritableWorkbook workbook, String sheetName, TableModel tableModel, 
             ColumnWidths columnWidths, boolean append) throws IOException, WriteException {
         
-        if(logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Append: {0}, sheet: {1}", 
-                    new Object[]{append, sheetName});
-        }
+        logger.log(Level.FINER, () -> "Append: "+append+", sheet: "+sheetName);
         
         WritableSheet sheet = workbook.getSheet(sheetName);
 

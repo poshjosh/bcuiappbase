@@ -51,7 +51,7 @@ public class ThirdComponentProviderImpl implements ThirdComponentProvider {
     }
     
     @Override
-    public Component get(Class valueType, String name, Object value, 
+    public Component get(Class parentType, Class valueType, String name, Object value, 
             JLabel label, Component component, Component outputIfNone) {
         
         final boolean selectionType = this.selectionContext.isSelectionType(valueType);
@@ -89,7 +89,8 @@ public class ThirdComponentProviderImpl implements ThirdComponentProvider {
                     return;
                 }
                 
-                final Selection [] updatedValues = componentModel.getSelectionValues(valueType).toArray(new Selection[0]);
+                final Selection [] updatedValues = componentModel.getSelectionValues(
+                        parentType, valueType, name, value).toArray(new Selection[0]);
                 
                 assert (itemCount < updatedValues.length) : "Entity created from user prompt may not have been added to JComboBox. Entity: " + created;
                 

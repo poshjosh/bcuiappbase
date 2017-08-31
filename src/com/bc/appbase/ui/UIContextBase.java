@@ -20,7 +20,7 @@ import com.bc.appbase.ui.table.cell.DefaultTableCellComponentModel;
 import com.bc.appbase.ui.dialog.DialogManager;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
 import com.bc.appcore.jpa.model.ResultModel;
-import com.bc.appbase.ui.table.model.SearchResultsTableModel;
+import com.bc.appcore.table.model.SearchResultsTableModel;
 import com.bc.jpa.search.SearchResults;
 import com.bc.ui.table.cell.ColumnWidths;
 import com.bc.ui.table.cell.TableCellUIUpdater;
@@ -71,9 +71,9 @@ import javax.swing.JProgressBar;
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 10, 2017 4:51:32 PM
  */
-public class UIContexBase implements UIContext {
+public class UIContextBase implements UIContext {
     
-    private transient final Logger logger = Logger.getLogger(UIContexBase.class.getName());
+    private transient final Logger logger = Logger.getLogger(UIContextBase.class.getName());
 
     private final App app;
     
@@ -84,7 +84,7 @@ public class UIContexBase implements UIContext {
     private final JFrame pbarFrame;
     private final ProgressbarPanel pbarPanel;
     
-    public UIContexBase(App app, ImageIcon imageIcon, JFrame mainFrame) {
+    public UIContextBase(App app, ImageIcon imageIcon, JFrame mainFrame) {
         this.app = Objects.requireNonNull(app);
         this.mainFrame = Objects.requireNonNull(mainFrame);
         this.imageIcon = imageIcon;
@@ -497,8 +497,8 @@ public class UIContexBase implements UIContext {
                 }catch(Exception exception) {
                     logger.log(Level.WARNING, "Error closing dao", exception);
                 }finally{
-                    attrs.remove(UIContexBase.this.getSearchResultsKey(KEY));
-                    attrs.remove(UIContexBase.this.getSearchResultsWindowKey(KEY));
+                    attrs.remove(UIContextBase.this.getSearchResultsKey(KEY));
+                    attrs.remove(UIContextBase.this.getSearchResultsWindowKey(KEY));
                 }
             }
         });

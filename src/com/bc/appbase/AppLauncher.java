@@ -16,326 +16,222 @@
 
 package com.bc.appbase;
 
+import com.authsvc.client.AppAuthenticationSession;
+import com.authsvc.client.AuthenticationException;
+import com.bc.appbase.jpa.JpaContextManagerWithUserPrompt;
+import com.bc.appbase.properties.AuthSvcPropertiesBuilder;
+import com.bc.appbase.properties.AuthSvcPropertiesBuilderImpl;
+import com.bc.appbase.properties.PropertiesBuilderExceptionHandler;
 import com.bc.appbase.ui.MainFrame;
 import com.bc.appbase.ui.MessageTextAreaOnStartup;
+import com.bc.appbase.ui.ScreenLog;
 import com.bc.appbase.ui.SearchResultsPanel;
 import com.bc.appbase.ui.UIContext;
-import com.bc.appbase.ui.ScreenLog;
-import com.bc.appbase.ui.actions.ParamNames;
+import com.bc.appbase.ui.actions.ActionCommands;
 import com.bc.appbase.ui.actions.SetLookAndFeel;
 import com.bc.appbase.ui.dialog.PopupImpl;
 import com.bc.appbase.ui.dialog.SimpleErrorOptions;
-import com.bc.appcore.ResourceContext;
-import com.bc.appcore.ResourceContextImpl;
+import com.bc.appcore.jpa.JpaContextManager;
+import com.bc.appcore.AppLauncherCore;
+import com.bc.appcore.ProcessLog;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.jpa.SearchContext;
-import com.bc.appcore.jpa.predicates.MasterPersistenceUnitTest;
-import com.bc.appcore.jpa.predicates.SlavePersistenceUnitTest;
-import com.bc.appcore.util.ExpirableCache;
-import com.bc.appcore.util.ExpirableCacheImpl;
-import com.bc.appcore.util.LoggingConfigManager;
-import com.bc.appcore.util.LoggingConfigManagerImpl;
-import com.bc.config.CompositeConfig;
+import com.bc.appcore.parameter.ParameterException;
 import com.bc.config.Config;
-import com.bc.config.ConfigService;
-import com.bc.config.SimpleConfigService;
 import com.bc.jpa.JpaContext;
-import com.bc.jpa.JpaContextImpl;
 import com.bc.jpa.search.SearchResults;
-import com.bc.jpa.sync.JpaSync;
-import com.bc.jpa.sync.SlaveUpdates;
-import com.bc.jpa.sync.impl.JpaSyncImpl;
-import com.bc.jpa.sync.impl.RemoteEntityUpdaterImpl;
-import com.bc.jpa.sync.impl.SlaveUpdatesImpl;
+import com.bc.jpa.sync.PendingUpdatesManager;
+import com.bc.jpa.sync.impl.PendingUpdatesManagerImpl;
+import com.bc.jpa.sync.impl.UpdaterImpl;
 import com.bc.jpa.sync.predicates.PersistenceCommunicationsLinkFailureTest;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.Collections;
+import java.io.File;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.Objects;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
-import com.bc.appcore.Filenames;
+import com.bc.appcore.Names;
 
 /**
- * @author Chinomso Bassey Ikwuagwu on May 5, 2017 8:18:25 PM
- * @param <A> The type of <code>App</code> to be created and launched
+ * @author Chinomso Bassey Ikwuagwu on Aug 20, 2017 10:06:03 PM
  */
-public abstract class AppLauncher<A extends App> {
-    
-    private final AtomicBoolean busy = new AtomicBoolean();
+public class AppLauncher<A extends App> extends AppLauncherCore<A> {
 
     private static final Logger logger = Logger.getLogger(AppLauncher.class.getName());
-    
-    private final boolean enableSync;
-    private final Class entityType;
-    private final Filenames defaultFilenames;
-    private final Filenames filenames; 
-    private final String [] dirsToCreate;
-    private final Path slaveUpdatesDir;
-    private final String settingsFile;
-    private final String startupScreeTitle;
 
-    public AppLauncher(boolean enableSync, Class entityType, 
-            Filenames defaultFilenames, Filenames filenames, 
-            String[] dirsToCreate, Path slaveUpdatesDir, 
-            String settingsFile, String startupScreeTitle) {
-        this.enableSync = enableSync;
+    private Class entityType;
+    
+    private UIContext uiContext;
+
+    public AppLauncher() { }
+
+    public AppLauncher processLog(String startupScreenTitle) {
+        this.processLog(new ScreenLog(startupScreenTitle, "Startup Log", new MessageTextAreaOnStartup(5, 20), 400, 300));
+        return this;
+    }
+    
+    public AppLauncher entityType(Class entityType) {
         this.entityType = entityType;
-        this.defaultFilenames = defaultFilenames;
-        this.filenames = filenames;
-        this.dirsToCreate = dirsToCreate;
-        this.slaveUpdatesDir = slaveUpdatesDir;
-        this.settingsFile = settingsFile;
-        this.startupScreeTitle = startupScreeTitle;
+        return this;
     }
-    
-    public void before() { }
-    
-    public abstract boolean isInstalled(Config config);
-    
-    public abstract void setInstalled(Config config, boolean installed);
-    
-    public abstract String getLookAndFeel(Config config);
-    
-    public abstract String getPersistenceFile(Config config);
-    
-    public void validateJpaContext(JpaContext jpaContext) { }
-    
-    public abstract A createApplication(Filenames filenames, 
-            ConfigService configService, Config config, Properties settingsConfig, 
-            JpaContext jpaContext, SlaveUpdates slaveUpdates, 
-            JpaSync jpaSync, ExpirableCache expirableCache);
-    
-    public void configureUI(UIContext uiContext) { }
-    
-    public void onLaunchCompleted(A app) { }
-    
-    public void onShutdown(A app) { }
-    
-    public synchronized boolean isBusy() {
-        return busy.get();
-    }
-    
-    public synchronized void waitTillCompletion() throws InterruptedException{
-        try{
-            while(busy.get()) {
-                this.wait(1000);
-            }
-        }finally{
-            this.notifyAll();
-        }
-    }
-    
-    public A launch(String [] args) {
 
-        try{
-           
-            if(busy.getAndSet(true)) {
-                throw new IllegalStateException();
-            }
-
-            Thread.setDefaultUncaughtExceptionHandler((Thread t, Throwable e) -> {
-                logger.log(Level.WARNING, "Uncaught exception in thread: " + t.getName(), e);
-            });
-                                   
-            final ScreenLog uiLog = new ScreenLog("Startup Log", new MessageTextAreaOnStartup(5, 20), 400, 300);
-            
-            uiLog.show();
-            
-            uiLog.log("");
-            uiLog.log(this.startupScreeTitle);
-            uiLog.log("");
-            uiLog.log("...Initializing");
-            
-            this.before();
-            
-            uiLog.log("Initializing folders");
-                                
-            final String [] filesToCreate = new String[]{
-                filenames.getPropertiesFile(),
-                filenames.getLoggingConfigFile()
-            };
-            final ResourceContext resourceContext = new ResourceContextImpl(dirsToCreate, filesToCreate);
-            
-            uiLog.log("Loading configurations");
-                                 
-            final ConfigService configService = new SimpleConfigService(
-                    defaultFilenames.getPropertiesFile(),
-                    filenames.getPropertiesFile()
-            );
-
-            final Config config = new CompositeConfig(configService);
-            
-            final boolean WAS_INSTALLED = this.isInstalled(config);
-                      
-            final LoggingConfigManager logConfigMgr = new LoggingConfigManagerImpl(resourceContext);
-       
-            if(WAS_INSTALLED) {
-                logConfigMgr.read(filenames.getLoggingConfigFile(), null);
-            }else{
-                logConfigMgr.init(
-                        defaultFilenames.getLoggingConfigFile(), 
-                        filenames.getLoggingConfigFile(), null);
-            }
-
-            uiLog.log("Setting look and feel");
-
-            new SetLookAndFeel().execute(null, 
-                    Collections.singletonMap(ParamNames.LOOK_AND_FEEL_NAME, 
-                            this.getLookAndFeel(config)));
-
-            uiLog.log("Initializing database");
-
-            final String persistenceFile = this.getPersistenceFile(config);
-            logger.log(Level.INFO, "Peristence file: {0}", persistenceFile);
-            final URI persistenceURI = resourceContext.getResource(persistenceFile).toURI();
-            final JpaContext jpaContext = new JpaContextImpl(persistenceURI, null);
-            this.validateJpaContext(jpaContext);
-
-            final SlaveUpdates slaveUpdates = slaveUpdatesDir == null ? SlaveUpdates.NO_OP :
-                    new SlaveUpdatesImpl(
-                            slaveUpdatesDir, 
-                            new RemoteEntityUpdaterImpl(jpaContext, new MasterPersistenceUnitTest(), new SlavePersistenceUnitTest()),
-                            new PersistenceCommunicationsLinkFailureTest());
-
-            final JpaSync jpaSync = !enableSync ? JpaSync.NO_OP :
-                    new JpaSyncImpl(jpaContext, 
-                            new RemoteEntityUpdaterImpl(jpaContext, new MasterPersistenceUnitTest(), new SlavePersistenceUnitTest()), 
-                            20, 
-                            new PersistenceCommunicationsLinkFailureTest());
-
-            uiLog.log("Initializing application context");
-            
-            final Properties settingsMetaData = new Properties();
-            
-            try(Reader reader = new InputStreamReader(
-                    resourceContext.getResourceAsStream(this.settingsFile))) {
-                settingsMetaData.load(reader);
-                logger.log(Level.FINE, "Loaded settings from: {0}", 
-                        resourceContext.getResource(this.settingsFile));
-            }
-
-            final ExpirableCache expirableCache = new ExpirableCacheImpl(10, TimeUnit.MINUTES);
-            
-            final A app = this.createApplication(
-                    filenames, configService, config, settingsMetaData, 
-                    jpaContext, slaveUpdates, jpaSync, expirableCache 
-            );
-
-            uiLog.log("Creating user interface");
-            
-            /* Create and display the UIContextBase */
-            java.awt.EventQueue.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    try{
-
-                        app.init();
-
-                        uiLog.log("Configuring user interface");
-
-                        final UIContext uiContext = app.getUIContext();
-                        
-                        final AppLauncher ref = AppLauncher.this;
-                        
-                        ref.configureUI(uiContext);
-                                                                    
-                        uiLog.log("Loading search results");
-                        
-                        ref.loadSearchResults(app, entityType);
-                        
-                        final JFrame mainFrame = uiContext.getMainFrame();
-
-                        mainFrame.pack();
-
-                        uiLog.log("Displaying user interface");
-
-                        mainFrame.setVisible(true);
-
-                        ref.setInstalled(config, true);
-                        
-                        app.getConfigService().store();
-
-                        logger.log(Level.INFO, "Was installed: {0}, now installed: {1}",
-                                new Object[]{WAS_INSTALLED, ref.isInstalled(config)});
-                        
-                        uiLog.log(WAS_INSTALLED ? "App Launch Successful" : "Installation Successful");
-                        
-                        if(!WAS_INSTALLED) {
-                            
-                            uiLog.querySaveLogThenSave("installation");
-                        }
-
-                        Runtime.getRuntime().addShutdownHook(new Thread("App_ShutdownHook_Thread") {
-                            @Override
-                            public void run() {
-                                try{
-                                    if(!app.isShutdown()) {
-                                        app.shutdown();
-                                    }
-
-                                    AppLauncher.this.onShutdown(app);
-                                    
-                                }catch(RuntimeException e) {
-                                    logger.log(Level.WARNING, "Error running shut down hook: "+Thread.currentThread().getName(), e);
-                                }
-                            }
-                        });
-
-                        new Thread(this.getClass().getName()+"#onLaunchCompleted_WorkerThread"){
-                            @Override
-                            public void run() {
-                                try{
-                                                                                   
-                                    AppLauncher.this.onLaunchCompleted(app);
-                                    
-                                }catch(RuntimeException e) {
-                                    logger.log(Level.WARNING, "Exception executing method " + 
-                                            this.getClass().getName()+"#onLaunchCompleted() in thread " +
-                                            Thread.currentThread().getName(), e);
-                                }
-                            }
-                        }.start();
-                        
-                    }catch(Exception e) {
-                        
-                        uiLog.log("Error");
-                        uiLog.log(e);
-                        
-                        showErrorMessageAndExit(e);
-                        
-                    }finally{
-                        
-                        uiLog.hideAndDispose();
-                        
-                        busy.set(false);
+    @Override
+    protected AppAuthenticationSession createAuthSession() 
+            throws IOException, ParseException {
+        
+        final AuthSvcPropertiesBuilder propertiesBuilder = this.getAuthSvcPropertiesBuilder();
+        
+        final Predicate<Properties> propertiesValidator = (properties) -> {
+            try{
+                
+                return this.createAuthSession(properties) != null;
+                
+            }catch(IOException | ParseException | AuthenticationException e) {
+                
+                final Function<Exception, String> getExceptionMsg = (exception) -> {
+                    if(exception instanceof AuthenticationException) {
+                        return e.getLocalizedMessage();
+                    }else{
+                        return "Unexpected error";
                     }
-                }
-            });
-            
-            return app;
-            
-        }catch(Exception e) {
-            
-            showErrorMessageAndExit(e);
-            
-            return null;
+                };
+                
+                new PropertiesBuilderExceptionHandler(propertiesBuilder, getExceptionMsg).accept(e);
+                
+                return false;
+            }
+        };
+
+        final Properties defaultProperties = this.loadAuthProperties();
+
+        logger.fine(() -> "Loaded auth properties: " + (defaultProperties == null ? null : defaultProperties.stringPropertyNames()));
+        
+        final File file = this.getPropertiesContext().getAuthsvc().toFile();
+        
+        propertiesBuilder
+                .optionsProvider("Configure Application Authentication")
+                .sourceFile(file)
+                .displayPromptAtLeastOnce(this.isNewInstallation())
+                .validator(propertiesValidator)
+                .maxTrials(this.getMaxTrials())
+                .defaultValues(defaultProperties)
+                .build();
+        
+        return Objects.requireNonNull(this.getAuthenticationSession());
+    }
+    
+    @Override
+    protected Properties loadAuthProperties() throws IOException {
+        final Properties defaultValues = this.getDefaultAuthProperties();
+        final Properties fromFile = super.loadAuthProperties();
+        final Set<String> names = fromFile.stringPropertyNames();
+        for(String name : names) {
+            final String value = fromFile.getProperty(name, null);
+            if(value != null) {
+                defaultValues.setProperty(name, value);
+            }
+        }
+        return defaultValues;
+    }
+
+    protected AuthSvcPropertiesBuilder getAuthSvcPropertiesBuilder() {
+        final AuthSvcPropertiesBuilder builder = new AuthSvcPropertiesBuilderImpl();
+        return builder;
+    }
+    
+    @Override
+    public JpaContextManager getJpaContextManager() {
+        return new JpaContextManagerWithUserPrompt(this.uiContext, this.getPropertiesContext(), this.getMasterPersistenceUnitTest());
+    }
+
+    @Override
+    protected PendingUpdatesManager createPendingMasterUpdatesManager(JpaContext jpaContext) {
+        final Predicate<Throwable> commsFailureTest = new PersistenceCommunicationsLinkFailureTest();
+        return new PendingUpdatesManagerImpl(
+                this.getPendingUpdatesFilePath(Names.PENDING_MASTER_UPDATES_FILE_NAME).toFile(),
+                new UpdaterImpl(jpaContext, this.getMasterPersistenceUnitTest()),
+                commsFailureTest
+        );
+    }
+
+    @Override
+    protected void onInstallationCompleted(A app) {
+        ((ScreenLog)this.getProcessLog()).querySaveLogThenSave("installation");
+    }
+    
+    protected void setLookAndFeel(Config config) {
+        final String lookAndFeelName = this.getLookAndFeel(config, "Motif");
+        try{
+            new SetLookAndFeel().execute(lookAndFeelName);
+//System.out.println(this.getClass().getName()+"--------------------------------\n"+new JsonFormat(true, true, "  ").toJSONString(config.getProperties()));            
+        }catch(ParameterException | TaskExecutionException e) {
+            logger.log(Level.WARNING, "Exception setting look and feel to: " + lookAndFeelName, e);
+        }
+    }
+
+    protected void configureUI(UIContext uiContext, Config config) { }
+    
+    /**
+     * <b>This method is called on the AWT Event Queue</b>
+     * Initialize the app's User Interface (UI).
+     * @param app The app whose UI will be initialized
+     */
+    @Override
+    protected void initUI(A app) {
+
+        final ProcessLog processLog = getProcessLog();
+        
+        processLog.log("Creating user interface");
+
+        setLookAndFeel(app.getConfig());
+
+        processLog.log("Configuring user interface");
+
+        final Config config = app.getConfig();
+
+        this.uiContext = app.getUIContext();
+
+        final AppLauncher ref = AppLauncher.this;
+
+        configureUI(uiContext, config);
+
+        if(this.isEnableSync()) {
+            app.getAction(ActionCommands.SYNC_IF_SLAVE_DATABASE_EMPTY).executeSilently(app, null);
+        }
+
+        processLog.log("Loading search results");
+
+        ref.loadSearchResults(app, entityType);
+
+        final JFrame mainFrame = uiContext.getMainFrame();
+
+        mainFrame.pack();
+
+        processLog.log("Displaying user interface");
+
+        mainFrame.setVisible(true);
+
+        if(isNewInstallation() && app.getAuthenticationSession() != null) {
+            try{
+                app.getAction(ActionCommands.NEWUSER_VIA_USER_PROMPT).execute(app);
+            }catch(ParameterException | TaskExecutionException e) {
+                logger.log(Level.WARNING, "Error executing action: " + ActionCommands.NEWUSER_VIA_USER_PROMPT, e);
+            }
         }
     }
     
-    public <T> void loadSearchResults(A app, Class<T> entityType) {
+    protected <T> void loadSearchResults(A app, Class<T> entityType) {
 
         final SearchContext<T> searchContext = app.getSearchContext(entityType);
 
         final SearchResults<T> searchResults = searchContext.getSearchResults();
 
-        final UIContext uiContext = app.getUIContext();
-        
-        final JFrame frame = uiContext.getMainFrame();
+        final JFrame frame = this.uiContext.getMainFrame();
         
         uiContext.positionFullScreen(frame);
 
@@ -348,16 +244,21 @@ public abstract class AppLauncher<A extends App> {
         }
     }
     
-    public void showErrorMessageAndExit(Throwable t) {
-        showErrorMessageAndExit(t, "Failed to start application", 0);
-    }
-    
-    public void showErrorMessageAndExit(Throwable t, String description, int exitCode) {
+    @Override
+    protected void onStartupException(Throwable t, String description, int exitCode) {
         
         logger.log(Level.SEVERE, description, t);
         
         new PopupImpl(null, new SimpleErrorOptions()).showErrorMessage(t, description);
 
         System.exit(exitCode);
+    }
+
+    public Class getEntityType() {
+        return entityType;
+    }
+
+    public UIContext getUiContext() {
+        return uiContext;
     }
 }

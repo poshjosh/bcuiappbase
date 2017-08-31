@@ -60,7 +60,7 @@ public class SearchResultsPanel extends javax.swing.JPanel {
         this.getLastPageButton().setActionCommand(ActionCommands.LAST_RESULT);
         this.getFirstPageButton().setActionCommand(ActionCommands.FIRST_RESULT);
         
-        uiContext.addActionListeners(table, this.getAddButton(),
+        uiContext.addActionListeners(table, 
                 this.getNextPageButton(), this.getPreviousPageButton(),
                 this.getLastPageButton(), this.getFirstPageButton());
 

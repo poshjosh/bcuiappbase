@@ -34,7 +34,7 @@ public abstract class AbstractExecuteQuery implements Action<App, Integer> {
     
     @Override
     public Integer execute(App app, Map<String, Object> params) 
-            throws com.bc.appcore.actions.TaskExecutionException {
+            throws com.bc.appcore.exceptions.TaskExecutionException {
         
         final Dimension dim = new Dimension(700, 300);
         

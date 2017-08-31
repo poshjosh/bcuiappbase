@@ -16,14 +16,40 @@
 
 package com.bc.appbase.ui.actions;
 
-import com.bc.appcore.actions.ActionCommandsBase;
+import com.bc.appcore.actions.ActionCommandsCore;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 8, 2017 10:12:10 PM
  */
-public interface ActionCommands extends ActionCommandsBase {
+public interface ActionCommands extends ActionCommandsCore {
+    
+    String DISPLAY_DATABASE_OPTIONS = DisplayMasterDatabaseOptions.class.getName();
+    
+    String DISPLAY_PENDING_MASTER_UPDATES = DisplayPendingMasterUpdates.class.getName();
+    
+    String LOGIN_OR_LOGOUT = LoginOrOut.class.getName();
+    
+    String LOGIN_VIA_USER_PROMPT = LoginViaUserPrompt.class.getName();
+    
+    String LOGOUT = Logout.class.getName();
+    
+    String NEWUSER_VIA_USER_PROMPT = NewUserViaUserPrompt.class.getName();
+    
+    String UPDATE_LOGIN_BUTTON_TEXT = UpdateLoginButtonText.class.getName();
+    
+    String IMPORT_SHEET_DATA = ImportSheetData.class.getName();
+    
+    String DISPLAY_AND_EXTRACT_OPTIONS_FROM_UI = DisplayAndExtractOptionsFromUI.class.getName();
+    
+    String DISPLAY_OPTIONS_UI = DisplayOptionsUI.class.getName();
+    
+    String EXTRACT_FROM_UI = ExtractFromUI.class.getName();
     
     String UPDATE_DATABASE_WITH_ENTITIES = UpdateDatabaseWithEntities.class.getName();
+    
+    String SYNC_DATABASE = SyncDatabase.class.getName();
+    
+    String SYNC_IF_SLAVE_DATABASE_EMPTY = SyncIfSlaveDatabaseEmpty.class.getName();
     
     String VIEW_SUMMARY_REPORT = ViewSummaryReport.class.getName();
     
@@ -59,9 +85,9 @@ public interface ActionCommands extends ActionCommandsBase {
     
     String DISPLAY_SETTINGS_UI = DisplaySettingsUI.class.getName();
     
-    String UPDATE_SETTINGS_FROM_UI = UpdateSettingsFromUI.class.getName();
+//    String UPDATE_SETTINGS_FROM_UI = UpdateSettingsFromUI.class.getName();
     
-    String PROMPT_SELECT_EXCEL_FILE = PromptSelectExcelFile.class.getName();
+    String PROMPT_SELECT_EXCEL_FILE = PromptUserSelectExcelFile.class.getName();
     
     String PROMPT_SELECT_SHEETNAME = PromptSelectSheetName.class.getName();
     

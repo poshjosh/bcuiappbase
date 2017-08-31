@@ -120,7 +120,6 @@ public class PromptUserCreateNewSelectionType implements PromptUserCreateNew {
         updater.update(columnEntity, data, true);
 
         app.getDao(columnType).begin().persistAndClose(columnEntity);
-        app.getSlaveUpdates().addPersist(columnEntity);
 
         app.getUIContext().showSuccessMessage("Successfully added "+columnTypeSimpleName);
 

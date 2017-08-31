@@ -29,9 +29,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import com.bc.appbase.App;
 import com.bc.appbase.ui.actions.ActionCommands;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.parameter.ParameterException;
 import java.awt.Dimension;
+import javax.swing.AbstractButton;
 
 /**
  * The help menu though created and set-up, is not added by default. Use 
@@ -49,8 +50,11 @@ public class MainFrame extends javax.swing.JFrame {
     private final javax.swing.JPanel topPanel;
     private final javax.swing.JScrollPane topPanelScrollPane;
     private final javax.swing.JMenuItem viewSummaryReportMenuItem;
+    
     private final javax.swing.JMenu toolsMenu;
     private final javax.swing.JMenuItem settingsMenuItem;
+    private final javax.swing.JMenuItem databaseSettingsMenuItem;
+    private final javax.swing.JMenuItem viewPendingUpdatesMenuItem;
     private final javax.swing.JMenuItem changeLogLevelMenuItem;
     private final javax.swing.JMenuItem viewLogMenuItem;
     private final javax.swing.JMenuItem refreshMenuItem;
@@ -58,6 +62,10 @@ public class MainFrame extends javax.swing.JFrame {
     private final javax.swing.JMenu recordMenu;
     private final javax.swing.JMenuItem addNewRecordMenuItem;
     private final javax.swing.JMenuItem viewRecordMenuItem;
+    
+    private final javax.swing.JMenu userMenu;
+    private final javax.swing.JMenuItem loginMenuItem;
+    private final javax.swing.JMenuItem newUserMenuItem;
     
     private final com.bc.appbase.ui.SearchResultsPanel searchResultsPanel;
     private final Font menuFont;
@@ -80,23 +88,36 @@ public class MainFrame extends javax.swing.JFrame {
         
         topPanelScrollPane = new javax.swing.JScrollPane();
         searchResultsPanel = new com.bc.appbase.ui.SearchResultsPanel();
+        
         menuBar = new javax.swing.JMenuBar();
+        
         fileMenu = new com.bc.appbase.ui.FileMenu();
+        
         toolsMenu = new javax.swing.JMenu(); 
+        settingsMenuItem = new javax.swing.JMenuItem(); 
+        databaseSettingsMenuItem = new javax.swing.JMenuItem(); 
+        viewPendingUpdatesMenuItem = new javax.swing.JMenuItem();  
+        changeLogLevelMenuItem = new javax.swing.JMenuItem();  
+        viewLogMenuItem = new javax.swing.JMenuItem();  
+        refreshMenuItem = new javax.swing.JMenuItem();
+        
+        
         viewSummaryReportMenuItem = new javax.swing.JMenuItem();
         exitMenuItem = new javax.swing.JMenuItem();
         helpMenu = new javax.swing.JMenu();
         aboutMenuItem = new javax.swing.JMenuItem();
-        settingsMenuItem = new javax.swing.JMenuItem(); 
-        changeLogLevelMenuItem = new javax.swing.JMenuItem();  
-        viewLogMenuItem = new javax.swing.JMenuItem();  
-        refreshMenuItem = new javax.swing.JMenuItem();
         
         recordMenu = new javax.swing.JMenu();
         addNewRecordMenuItem = new javax.swing.JMenuItem();        
         viewRecordMenuItem = new javax.swing.JMenuItem();
         
+        userMenu = new javax.swing.JMenu();
+        loginMenuItem = new javax.swing.JMenuItem();  
+        newUserMenuItem = new javax.swing.JMenuItem();
+        
         initComponents();
+        
+        this.addHelpMenu();
         
         if(app != null) {
             this.init(app);
@@ -104,6 +125,10 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     public void init(App app) {
+        
+        if(app.getAuthenticationSession() == null) {
+            this.menuBar.remove(this.userMenu);
+        }
         
         this.addWindowListener(new WindowAdapter() {
             @Override
@@ -124,17 +149,23 @@ public class MainFrame extends javax.swing.JFrame {
         
         this.getExitMenuItem().setActionCommand(ActionCommands.EXIT_UI_THEN_EXIT);
         this.getSettingsMenuItem().setActionCommand(ActionCommands.DISPLAY_SETTINGS_UI);
+        this.getDatabaseSettingsMenuItem().setActionCommand(ActionCommands.DISPLAY_DATABASE_OPTIONS);
+        this.getViewPendingUpdatesMenuItem().setActionCommand(ActionCommands.DISPLAY_PENDING_MASTER_UPDATES);
         this.getChangeLogLevelMenuItem().setActionCommand(ActionCommands.CHANGE_LOG_LEVEL);
         this.getViewLogMenuItem().setActionCommand(ActionCommands.VIEW_LOG);
         this.getRefreshMenuItem().setActionCommand(ActionCommands.RELOAD_MAIN_RESULTS);
         this.getAddNewRecordMenuItem().setActionCommand(ActionCommands.DISPLAY_ADD_SELECTION_TYPE_UI);
         this.getViewRecordMenuItem().setActionCommand(ActionCommands.DISPLAY_SELECTION_TYPE_TABLE);
+        this.getLoginMenuItem().setActionCommand(ActionCommands.LOGIN_OR_LOGOUT);
+        this.getNewUserMenuItem().setActionCommand(ActionCommands.NEWUSER_VIA_USER_PROMPT);
         
         app.getUIContext().addActionListeners(this, 
-                this.getExitMenuItem(), this.getSettingsMenuItem(), 
+                this.getExitMenuItem(), 
+                this.getSettingsMenuItem(), this.getDatabaseSettingsMenuItem(), this.getViewPendingUpdatesMenuItem(),
                 this.getChangeLogLevelMenuItem(), this.getViewLogMenuItem(),
                 this.getRefreshMenuItem(), this.getAddNewRecordMenuItem(),
-                this.getViewRecordMenuItem());
+                this.getViewRecordMenuItem(),
+                this.getLoginMenuItem(), this.getNewUserMenuItem());
         
         this.fileMenu.addActionListenerToDefaultMenuItems(app.getUIContext(),
                 this.getSearchResultsPanel().getSearchResultsTable());
@@ -181,47 +212,28 @@ public class MainFrame extends javax.swing.JFrame {
 
         topPanelScrollPane.setViewportView(topPanel);
 
-        fileMenu.setMnemonic('f');
-        fileMenu.setText("File");
-        fileMenu.setFont(this.menuFont);
+        this.configure(fileMenu, "File", 'f');
         fileMenu.setMenuItemsFont(this.menuFont);
-        
-        viewSummaryReportMenuItem.setFont(this.menuFont);
-        viewSummaryReportMenuItem.setText("View Summary Report");
-        fileMenu.add(viewSummaryReportMenuItem);
-
-        refreshMenuItem.setFont(menuFont);
-        refreshMenuItem.setText("Refresh");
-        fileMenu.add(refreshMenuItem);
-        
-        exitMenuItem.setFont(this.menuFont);
-        exitMenuItem.setMnemonic('x');
-        exitMenuItem.setText("Exit");
-        fileMenu.add(exitMenuItem);
-
+        fileMenu.add(this.configure(viewSummaryReportMenuItem, "View Summary Report"));
+        fileMenu.add(this.configure(refreshMenuItem, "Refresh"));
+        fileMenu.add(this.configure(exitMenuItem, "Exit", 'x'));
         menuBar.add(fileMenu);
-
-        recordMenu.setText("Records");
-        recordMenu.setFont(this.menuFont);
         
-        addNewRecordMenuItem.setFont(this.menuFont);
-        addNewRecordMenuItem.setText("Add New Record");
-        recordMenu.add(addNewRecordMenuItem);
+        this.configure(this.userMenu, "User Profile");
+        userMenu.add(this.configure(loginMenuItem, "Login"));
+        userMenu.add(this.configure(newUserMenuItem, "New User"));
+        menuBar.add(userMenu);
         
-        viewRecordMenuItem.setFont(this.menuFont);
-        viewRecordMenuItem.setText("View Records");
-        recordMenu.add(viewRecordMenuItem);
-        
+        this.configure(recordMenu, "Records");
+        recordMenu.add(this.configure(addNewRecordMenuItem, "Add New Record"));
+        recordMenu.add(this.configure(viewRecordMenuItem, "View Records"));
         menuBar.add(recordMenu);
         
-        toolsMenu.setMnemonic('t');
-        toolsMenu.setText("Tools");
-        toolsMenu.setFont(this.menuFont);
+        this.configure(toolsMenu, "Tools", 't');
+        toolsMenu.add(this.configure(settingsMenuItem, "Settings"));
+        toolsMenu.add(this.configure(databaseSettingsMenuItem, "Database Settings"));
+        toolsMenu.add(this.configure(viewPendingUpdatesMenuItem, "View Pending Updates"));
 
-        settingsMenuItem.setFont(this.menuFont);
-        settingsMenuItem.setText("Settings");
-        toolsMenu.add(settingsMenuItem);
-        
         changeLogLevelMenuItem.setFont(this.menuFont);
         changeLogLevelMenuItem.setText("Change Log Level");
         toolsMenu.add(changeLogLevelMenuItem);
@@ -260,6 +272,19 @@ public class MainFrame extends javax.swing.JFrame {
                 .addComponent(searchResultsPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
+    }
+    
+    public AbstractButton configure(AbstractButton btn, String text) {
+        return this.configure(btn, text, '\u0000');
+    }
+    
+    public AbstractButton configure(AbstractButton btn, String text, char mnemonic) {
+        if(mnemonic != '\u0000') {
+            btn.setMnemonic(mnemonic);
+        }
+        btn.setText(text);
+        btn.setFont(this.menuFont);
+        return btn;
     }
     
     public void addHelpMenu() {
@@ -315,6 +340,18 @@ public class MainFrame extends javax.swing.JFrame {
         return topPanelScrollPane;
     }
 
+    public JMenu getUserMenu() {
+        return userMenu;
+    }
+
+    public JMenuItem getLoginMenuItem() {
+        return loginMenuItem;
+    }
+
+    public JMenuItem getNewUserMenuItem() {
+        return newUserMenuItem;
+    }
+
     public JMenuItem getPrintMenuItem() {
         return this.getFileMenu().getPrintMenuItem();
     }
@@ -331,8 +368,16 @@ public class MainFrame extends javax.swing.JFrame {
         return toolsMenu;
     }
 
+    public JMenuItem getDatabaseSettingsMenuItem() {
+        return databaseSettingsMenuItem;
+    }
+
     public JMenuItem getSettingsMenuItem() {
         return settingsMenuItem;
+    }
+    
+    public JMenuItem getViewPendingUpdatesMenuItem() {
+        return viewPendingUpdatesMenuItem;
     }
 
     public JMenuItem getChangeLogLevelMenuItem() {

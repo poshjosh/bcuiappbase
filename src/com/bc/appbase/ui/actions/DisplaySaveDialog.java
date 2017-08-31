@@ -21,7 +21,7 @@ import javax.swing.JFileChooser;
 /**
  * @author Chinomso Bassey Ikwuagwu on Apr 8, 2017 8:17:08 PM
  */
-public class DisplaySaveDialog extends DisplayDialog {
+public class DisplaySaveDialog extends DisplayDialogAction {
     
     public DisplaySaveDialog() {
         super(JFileChooser.SAVE_DIALOG);

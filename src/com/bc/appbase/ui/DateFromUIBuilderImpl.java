@@ -16,7 +16,6 @@
 
 package com.bc.appbase.ui;
 
-import java.time.Month;
 import java.util.Calendar;
 import java.util.Date;
 import javax.swing.JComboBox;
@@ -25,7 +24,7 @@ import javax.swing.text.JTextComponent;
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 11, 2017 1:56:29 PM
  */
-public class DateFromUIBuilderImpl implements DateFromUIBuilder<DateTimePanel> {
+public class DateFromUIBuilderImpl implements DateFromUIBuilder<DatePanel> {
 
     private Calendar calendar;
     private int defaultHours = -1;
@@ -48,59 +47,62 @@ public class DateFromUIBuilderImpl implements DateFromUIBuilder<DateTimePanel> {
     }
 
     @Override
-    public DateFromUIBuilder<DateTimePanel> ui(DateTimePanel ui) {
-        this.dayTextField(ui.getDayTextfield());
-        this.hoursTextField(ui.getHoursTextfield());
-        this.minutesTextField(ui.getMinutesTextfield());
-        this.monthComboBox(ui.getMonthCombobox());
-        this.yearComboBox(ui.getYearCombobox());
+    public DateFromUIBuilder<DatePanel> ui(DatePanel datePanel) {
+        this.dayTextField(datePanel.getDayTextfield());
+        if(datePanel instanceof DateTimePanel) {
+            final DateTimePanel dateTimePanel = (DateTimePanel)datePanel;
+            this.hoursTextField(dateTimePanel.getHoursTextfield());
+            this.minutesTextField(dateTimePanel.getMinutesTextfield());
+        }
+        this.monthComboBox(datePanel.getMonthCombobox());
+        this.yearComboBox(datePanel.getYearCombobox());
         return this;
     }
     
     @Override
-    public DateFromUIBuilder<DateTimePanel> calendar(Calendar calendar) {
+    public DateFromUIBuilder<DatePanel> calendar(Calendar calendar) {
         this.calendar = calendar;
         return this;
     }
 
     @Override
-    public DateFromUIBuilder<DateTimePanel> defaultHousrs(int hours) {
+    public DateFromUIBuilder<DatePanel> defaultHousrs(int hours) {
         this.defaultHours = hours;
         return this;
     }
 
     @Override
-    public DateFromUIBuilder<DateTimePanel> defaultMinutes(int minutes) {
+    public DateFromUIBuilder<DatePanel> defaultMinutes(int minutes) {
         this.defaultMinutes = minutes;
         return this;
     }
 
     @Override
-    public DateFromUIBuilder<DateTimePanel> hoursTextField(JTextComponent hoursTextField) {
+    public DateFromUIBuilder<DatePanel> hoursTextField(JTextComponent hoursTextField) {
         this.hoursTextField = hoursTextField;
         return this;
     }
 
     @Override
-    public DateFromUIBuilder<DateTimePanel> minutesTextField(JTextComponent minutesTextField) {
+    public DateFromUIBuilder<DatePanel> minutesTextField(JTextComponent minutesTextField) {
         this.minutesTextField = minutesTextField;
         return this;
     }
 
     @Override
-    public DateFromUIBuilder<DateTimePanel> dayTextField(JTextComponent dayTextField) {
+    public DateFromUIBuilder<DatePanel> dayTextField(JTextComponent dayTextField) {
         this.dayTextField = dayTextField;
         return this;
     }
 
     @Override
-    public DateFromUIBuilder<DateTimePanel> monthComboBox(JComboBox monthComboBox) {
+    public DateFromUIBuilder<DatePanel> monthComboBox(JComboBox monthComboBox) {
         this.monthComboBox = monthComboBox;
         return this;
     }
 
     @Override
-    public DateFromUIBuilder<DateTimePanel> yearComboBox(JComboBox yearComboBox) {
+    public DateFromUIBuilder<DatePanel> yearComboBox(JComboBox yearComboBox) {
         this.yearComboBox = yearComboBox;
         return this;
     }

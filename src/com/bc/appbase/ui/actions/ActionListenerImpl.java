@@ -36,6 +36,8 @@ import javax.swing.JFrame;
  */
 public class ActionListenerImpl implements ActionListener {
 
+    private static final Logger logger = Logger.getLogger(ActionListenerImpl.class.getName());
+
     private final App app;
     
     private final Callable action;
@@ -75,7 +77,7 @@ public class ActionListenerImpl implements ActionListener {
             
             if(!Objects.equals(this.actionCommand, ACTION_COMMAND)) {
                 
-                throw new IllegalStateException("Unexpected action command: " + ACTION_COMMAND);
+                throw new IllegalStateException("Unexpected action command: " + ACTION_COMMAND + ", expected: " + this.actionCommand);
             }
             
             try {
@@ -121,13 +123,23 @@ public class ActionListenerImpl implements ActionListener {
 
         execSvc.schedule(() -> {
 
-            execSvc.shutdown();
+            try{
+                
+                execSvc.shutdown();
 
-            synchronized(completed) {
-                if(!completed.get()) {
-                    app.getUIContext().showProgressBarPercent("Please wait", -1);
+                synchronized(completed) {
+                    if(!completed.get()) {
+                        app.getUIContext().showProgressBarPercent("Please wait", -1);
+                    }
                 }
-                Util.shutdownAndAwaitTermination(execSvc, 500, TimeUnit.MILLISECONDS);
+            }catch(Exception e) {
+                logger.log(Level.WARNING, "Encountered exception showing progress bar", e);
+            }finally{
+                try{
+                    Util.shutdownAndAwaitTermination(execSvc, 500, TimeUnit.MILLISECONDS);
+                }catch(Exception e) {
+                    logger.log(Level.WARNING, "Encountered exception shutting down executor service for scheduling start of progress bar", e);
+                }
             }
         }, progressBarDelay, TimeUnit.MILLISECONDS);
 
@@ -160,8 +172,7 @@ public class ActionListenerImpl implements ActionListener {
     }
     
     public void handleException(Throwable e, String message) {
-        Logger.getLogger(this.getClass().getName()).log(
-                Level.WARNING, message, e);
+        logger.log(Level.WARNING, message, e);
         app.getUIContext().showErrorMessage(e, message);
     }
 }

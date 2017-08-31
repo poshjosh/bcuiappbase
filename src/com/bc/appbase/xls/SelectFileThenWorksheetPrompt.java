@@ -16,7 +16,7 @@
 
 package com.bc.appbase.xls;
 
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.parameter.ParameterException;
 import java.io.File;
 import jxl.Sheet;

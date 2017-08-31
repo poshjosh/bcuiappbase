@@ -18,6 +18,7 @@ package com.bc.appbase.ui;
 
 import java.awt.Container;
 import java.awt.Window;
+import java.util.concurrent.Callable;
 import javax.swing.AbstractButton;
 
 /**
@@ -31,6 +32,12 @@ public interface UIDisplayHandler {
     
     void displayUI(Container ui, String title, boolean scrolls, boolean block);
 
-    void displayWithTopAndBottomActionButtons(Container ui, String title, String buttonText, String actionCommand, boolean block);
+    void displayWithTopAndBottomActionButtons(
+            Container ui, String title, String buttonText, Callable action, boolean block);
+    
+    void displayWithTopAndBottomActionButtons(
+            Container ui, String title, String buttonText, String actionCommand, boolean block);
 
+    void displayWithTopAndBottomActionButtons(
+            Container ui, String title, AbstractButton top, AbstractButton bottom, boolean block);
 }

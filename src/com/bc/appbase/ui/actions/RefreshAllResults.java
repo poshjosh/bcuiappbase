@@ -20,7 +20,7 @@ import com.bc.appbase.App;
 import com.bc.appbase.ui.Components;
 import com.bc.appbase.ui.SearchResultsPanel;
 import com.bc.appcore.actions.Action;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import java.awt.Component;
 import java.awt.Container;
 import java.util.ArrayList;

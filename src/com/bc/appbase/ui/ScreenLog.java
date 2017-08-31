@@ -16,6 +16,7 @@
 
 package com.bc.appbase.ui;
 
+import com.bc.appcore.ProcessLog;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.io.File;
@@ -23,6 +24,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Paths;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,28 +36,31 @@ import javax.swing.SwingUtilities;
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 17, 2017 11:10:45 AM
  */
-public class ScreenLog {
+public class ScreenLog implements ProcessLog {
     
     private final String LINE_SEPARATOR = System.getProperty("line.separator");
     
     private StringBuilder messageBuffer;
     
     private JFrame frame;
+    
+    private final String processName;
+    
     private final TextAreaPanel textAreaPanel;
     
-    public ScreenLog(String frameTitle, JTextArea textArea, int preferredWidth, int preferredHeight) {
-        
-        this(frameTitle, new TextAreaPanel(textArea, preferredWidth, preferredHeight));
+    public ScreenLog(String processName, String frameTitle, JTextArea textArea, int preferredWidth, int preferredHeight) {
+        this(processName, frameTitle, new TextAreaPanel(textArea, preferredWidth, preferredHeight));
     }
     
-    public ScreenLog(String frameTitle) {
-        this(frameTitle, new TextAreaPanel(new MessageTextArea(), 800, 700));
+    public ScreenLog(String processName, String frameTitle) {
+        this(processName, frameTitle, new TextAreaPanel(new MessageTextArea(), 800, 700));
     }
     
-    public ScreenLog(String frameTitle, TextAreaPanel textAreaPanel) {
+    public ScreenLog(String processName, String frameTitle, TextAreaPanel textAreaPanel) {
         
         this.messageBuffer = new StringBuilder();
-        this.textAreaPanel = textAreaPanel;
+        this.processName = Objects.requireNonNull(processName);
+        this.textAreaPanel = Objects.requireNonNull(textAreaPanel);
         
         java.awt.EventQueue.invokeLater(() -> {
             
@@ -75,7 +80,11 @@ public class ScreenLog {
         });
     }
     
-    public void show() {
+    @Override
+    public void init() {
+        log("");
+        log(processName);
+        log("");
         java.awt.EventQueue.invokeLater(() -> {
             frame.setVisible(true);
         });
@@ -104,21 +113,26 @@ public class ScreenLog {
         }
     }    
         
-    public void hideAndDispose() {   
-        messageBuffer.setLength(0);
-        messageBuffer = null;
-        if(frame != null) {
-            frame.setVisible(false);
-            frame.dispose();
+    @Override
+    public void destroy() {   
+        if(messageBuffer != null) {
+            messageBuffer.setLength(0);
+            messageBuffer = null;
         }
-        frame = null;
+        if(frame != null) {
+            frame.setVisible(false); 
+            frame.dispose();
+            frame = null;
+        }
     }
     
+    @Override
     public void log(Throwable t) {
         log(t.getLocalizedMessage());
     }    
     
     private volatile long ld;
+    @Override
     public void log(Object msg) {
         if(msg == null) {
             msg = "null";

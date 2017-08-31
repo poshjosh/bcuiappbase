@@ -25,7 +25,8 @@ import com.bc.appbase.ui.WritableAwtFont;
 import com.bc.appbase.xls.impl.TableModelExcelWriter;
 import java.awt.Font;
 import com.bc.appbase.App;
-import com.bc.appbase.ui.table.model.DisplayTableModelFromModel;
+import com.bc.appcore.table.model.DisplayTableModelFromModel;
+import com.bc.appcore.table.model.TableModelDisplayFormat;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Set;
@@ -34,7 +35,6 @@ import java.util.logging.Logger;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
 import jxl.write.WritableWorkbook;
-import com.bc.ui.table.cell.TableCellDisplayFormat;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Mar 2, 2017 2:06:21 PM
@@ -45,7 +45,7 @@ public class SaveTableModel implements Action<App, File> {
     
     @Override
     public File execute(App app, Map<String, Object> params) 
-            throws com.bc.appcore.actions.TaskExecutionException {
+            throws com.bc.appcore.exceptions.TaskExecutionException {
 
         final Map<String, TableModel> data = (Map<String, TableModel>)params.get(ParamNames.DATA);
         
@@ -80,7 +80,7 @@ public class SaveTableModel implements Action<App, File> {
 
         }catch(IOException | WriteException e) {
 
-            throw new com.bc.appcore.actions.TaskExecutionException(e);
+            throw new com.bc.appcore.exceptions.TaskExecutionException(e);
         }
         
         return file;
@@ -110,14 +110,14 @@ public class SaveTableModel implements Action<App, File> {
 
             logger.log(Level.FINE, "Sheet names: {0}", sheetNames);
 
-            final TableCellDisplayFormat cellDisplayFormat = app.getUIContext().getTableCellDisplayFormat(-1);
+            final TableModelDisplayFormat modelDisplayFormat = app.getUIContext().getTableModelDisplayFormat(-1);
             
             for(String sheetName : sheetNames) {
             
                 final TableModel tableModel = data.get(sheetName);
                 
                 final Integer written = writeExcel.write(workbook, sheetName, 
-                        new DisplayTableModelFromModel(tableModel, cellDisplayFormat), 
+                        new DisplayTableModelFromModel(tableModel, modelDisplayFormat), 
                         app.getUIContext().getColumnWidths(), append);
                 
                 output.put(sheetName, written);

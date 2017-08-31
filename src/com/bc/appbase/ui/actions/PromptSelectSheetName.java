@@ -35,7 +35,7 @@ public class PromptSelectSheetName implements Action<App, String> {
 
     @Override
     public String execute(App app, Map<String, Object> params) 
-            throws com.bc.appcore.actions.TaskExecutionException {
+            throws com.bc.appcore.exceptions.TaskExecutionException {
         
         try{
             
@@ -48,7 +48,7 @@ public class PromptSelectSheetName implements Action<App, String> {
             return sheetName;
             
         }catch(IOException | BiffException e) {
-            throw new com.bc.appcore.actions.TaskExecutionException(e);
+            throw new com.bc.appcore.exceptions.TaskExecutionException(e);
         }
     }
 

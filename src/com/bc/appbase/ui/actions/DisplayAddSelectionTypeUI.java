@@ -19,7 +19,7 @@ package com.bc.appbase.ui.actions;
 import com.bc.appbase.App;
 import com.bc.appbase.ui.builder.PromptUserCreateNew;
 import com.bc.appcore.actions.Action;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.parameter.ParameterException;
 import com.bc.jpa.exceptions.EntityInstantiationException;
 import java.util.Map;

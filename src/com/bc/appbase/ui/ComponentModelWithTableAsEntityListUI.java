@@ -18,9 +18,11 @@ package com.bc.appbase.ui;
 
 import com.bc.appbase.App;
 import com.bc.appbase.ui.table.cell.DefaultTableCellDisplayFormat;
-import com.bc.appbase.ui.table.model.DisplayTableModelFromModel;
-import com.bc.appbase.ui.table.model.MapTableModel;
+import com.bc.appbase.ui.table.model.TableModelDisplayFormatImpl;
+import com.bc.appcore.table.model.DisplayTableModelFromModel;
+import com.bc.appcore.table.model.MapTableModel;
 import com.bc.appcore.jpa.SelectionContext;
+import com.bc.appcore.table.model.TableModelDisplayFormat;
 import com.bc.appcore.typeprovider.TypeProvider;
 import com.bc.ui.table.cell.TableCellDisplayFormat;
 import java.awt.Component;
@@ -121,12 +123,15 @@ public class ComponentModelWithTableAsEntityListUI extends ComponentModelImpl {
         this.removeIds(values, valueType);
         
         final TableModel ref = new MapTableModel(values, serialColumnName);
+        
         final int serialColumnIndex = serialColumnName == null ? - 1 : this.getColumnIndex(ref, serialColumnName);
         
         final DateFormat dateFormat = new SimpleDateFormat("dd-MM-yy");
-        final TableCellDisplayFormat displayFmt = new DefaultTableCellDisplayFormat(
-                app.getOrException(SelectionContext.class), dateFormat, serialColumnIndex) {
-//            private final Map<String, Collection> collections = new HashMap();        
+        
+        final TableCellDisplayFormat cellDisplayFormat = new DefaultTableCellDisplayFormat(
+                app.getOrException(SelectionContext.class), dateFormat, serialColumnIndex);
+        
+        final TableModelDisplayFormat displayFmt = new TableModelDisplayFormatImpl(cellDisplayFormat) {
             private final Map<String, Map> maps = new HashMap();
             @Override
             public Object toDisplayValue(Class columnClass, Object value, int row, int column) {
@@ -134,7 +139,6 @@ public class ComponentModelWithTableAsEntityListUI extends ComponentModelImpl {
                     final Map map = (Map)value;
                     final Collection c = map.values();
                     final String key = this.getKey(row, column);
-//                    collections.put(key, c);
                     maps.put(key, map);
                     return c;
                 }

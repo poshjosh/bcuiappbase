@@ -19,7 +19,6 @@ package com.bc.appbase.parameter;
 import com.bc.appbase.App;
 import com.bc.appbase.ui.SearchResultsPanel;
 import com.bc.appbase.ui.actions.ParamNames;
-import com.bc.appcore.AppCore;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
 import com.bc.appcore.jpa.model.ResultModel;
 import com.bc.appcore.parameter.ParametersBuilder;
@@ -33,6 +32,7 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JTable;
+import com.bc.appcore.AppCore;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Apr 1, 2017 4:19:41 PM

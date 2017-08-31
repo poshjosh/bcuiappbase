@@ -24,7 +24,7 @@ import java.awt.Container;
 import java.util.Map;
 import javax.swing.JTable;
 import com.bc.appbase.App;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
 
 /**

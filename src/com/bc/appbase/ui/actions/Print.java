@@ -28,7 +28,7 @@ import javax.print.attribute.standard.OrientationRequested;
 import javax.swing.JTable;
 import com.bc.appbase.App;
 import com.bc.appbase.ui.table.TableForPrinting;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.parameter.ParameterException;
 import java.util.Locale;
 import java.util.Objects;

@@ -28,7 +28,7 @@ import javax.swing.JTable;
 import javax.swing.table.TableModel;
 import com.bc.appbase.App;
 import com.bc.appbase.ui.FrameForTable;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.parameter.ParameterException;
 import java.awt.Font;
 import javax.swing.JFrame;
@@ -90,7 +90,7 @@ public class ViewTableAsExcel implements Action<App, File> {
     
     public Map<String, Object> getSaveTableParams(App app, TableModel tableModel, Font font) {
         final Map<String, Object> saveTableParams = new HashMap<>();
-        final String workingDir = app.getFilenames().getWorkingDir();
+        final String workingDir = app.getWorkingDir();
         final String filename = Long.toHexString(System.currentTimeMillis()) + "_temp.xls";
         saveTableParams.put(java.io.File.class.getName(), 
                 Paths.get(workingDir, filename).toFile());

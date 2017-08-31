@@ -24,7 +24,7 @@ import java.awt.Container;
 import java.util.Map;
 import javax.swing.JTable;
 import com.bc.appbase.App;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
 
 /**
@@ -34,7 +34,7 @@ public class PreviousResult implements Action<App, JTable> {
 
     @Override
     public JTable execute(App app, Map<String, Object> params) 
-            throws com.bc.appcore.actions.TaskExecutionException {
+            throws com.bc.appcore.exceptions.TaskExecutionException {
         
         final JTable table = (JTable)params.get(JTable.class.getName());
         

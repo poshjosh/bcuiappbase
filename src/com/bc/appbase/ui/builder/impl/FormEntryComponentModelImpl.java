@@ -48,6 +48,10 @@ public class FormEntryComponentModelImpl implements FormEntryComponentModel {
     
     private final ThirdComponentProvider thirdComponentProvider;
 
+    public FormEntryComponentModelImpl(ComponentModel componentModel) {
+        this(componentModel, -1, ThirdComponentProvider.PROVIDE_NONE);
+    }
+    
     public FormEntryComponentModelImpl(ComponentModel componentModel, int labelWidth, 
             ThirdComponentProvider thirdComponentProvider) {
         this.componentModel = Objects.requireNonNull(componentModel);
@@ -56,9 +60,15 @@ public class FormEntryComponentModelImpl implements FormEntryComponentModel {
     }
 
     @Override
+    public boolean isPasswordName(String name) {
+        return this.componentModel.isPasswordName(name);
+    }
+
+    @Override
     public JPanel getComponent(Class parentType, Class valueType, String name, Object value) {
 //System.out.println(valueType.getSimpleName()+' '+name+'='+value+". @"+this.getClass());                
         final Component component = componentModel.getComponent(parentType, valueType, name, value);
+        
         final ComponentModel.ComponentProperties props = componentModel.getComponentProperties();
         final int width = props.getWidth(component);
         final int height = props.getHeight(component);
@@ -74,7 +84,7 @@ public class FormEntryComponentModelImpl implements FormEntryComponentModel {
                 label, this.labelWidth == -1 ? props.getWidth(component) : this.labelWidth, props.getHeight(label), 
                 component, width, height, 
                 props.getFont(component).getName(), 
-                this.thirdComponentProvider.get(valueType, name, value, label, component, null)
+                this.thirdComponentProvider.get(parentType, valueType, name, value, label, component, null)
         );
         
         try{
@@ -128,8 +138,8 @@ public class FormEntryComponentModelImpl implements FormEntryComponentModel {
     }
 
     @Override
-    public List<Selection> getSelectionValues(Class valueType) {
-        final List<Selection> values = componentModel.getSelectionValues(valueType);
+    public List<Selection> getSelectionValues(Class parentType, Class valueType, String name, Object value) {
+        final List<Selection> values = componentModel.getSelectionValues(parentType, valueType, name, value);
         return values;
     }
     

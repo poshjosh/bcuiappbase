@@ -17,7 +17,7 @@
 package com.bc.appbase.ui.actions;
 
 import com.bc.appcore.actions.Action;
-import com.bc.appcore.util.Util;
+import com.bc.appcore.util.FileUtil;
 import com.bc.appbase.ui.dialog.DialogManager;
 import java.io.File;
 import java.util.Collections;
@@ -27,7 +27,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JTable;
 import javax.swing.table.TableModel;
 import com.bc.appbase.App;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.jpa.model.ResultModel;
 import com.bc.appcore.parameter.ParameterException;
 
@@ -62,7 +62,7 @@ public class SaveTableAs implements Action<App, File> {
             return null;
         }
         
-        file = new File(Util.convertToExtension(file.getPath(), "xls"));
+        file = new File(FileUtil.convertToExtension(file.getPath(), "xls"));
         
         params = new HashMap(params);
         params.put(ResultModel.class.getName(), app.getSearchContext(null).getResultModel());

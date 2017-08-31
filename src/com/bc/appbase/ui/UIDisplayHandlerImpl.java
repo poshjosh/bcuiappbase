@@ -21,9 +21,12 @@ import com.bc.appbase.ui.actions.BlockWindowUntilCloseButtonClick;
 import java.awt.Container;
 import java.awt.Font;
 import java.awt.Window;
+import java.util.Arrays;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.swing.AbstractButton;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -41,6 +44,58 @@ public class UIDisplayHandlerImpl implements UIDisplayHandler {
     public UIDisplayHandlerImpl(UIContext uiContext) {
         this.uiContext = Objects.requireNonNull(uiContext);
     }
+    
+    public Font getFont(Container ui) {
+        try{
+            final Font font = uiContext.getFont(ui.getClass());
+            return font;
+        }catch(Exception e) {
+            logger.log(Level.WARNING, "Exception getting font for type: "+ui.getClass(), e);
+            return new Font(Font.MONOSPACED, Font.BOLD, 24);
+        }
+    }
+
+    public AbstractButton getButton(UIContext uiContext, Callable action, String buttonText) {
+        final JButton button = new JButton(buttonText);
+        final String ACTION_COMMAND = action.getClass().getName();
+        button.setActionCommand(ACTION_COMMAND);
+        button.addActionListener(uiContext.getActionListener(action, ACTION_COMMAND, true));
+        return button;
+    }
+
+    @Override
+    public void displayWithTopAndBottomActionButtons(
+            Container ui, String title, String buttonText, Callable action, boolean block) {
+    
+        final AbstractButton top = this.getButton(uiContext, action, buttonText);
+        final AbstractButton bottom = this.getButton(uiContext, action, buttonText);
+        
+        this.displayWithTopAndBottomActionButtons(ui, title, top, bottom, block);
+    }
+    
+    @Override
+    public void displayWithTopAndBottomActionButtons(
+            Container ui, String title, AbstractButton top, AbstractButton bottom, boolean block) {
+        
+        final SimpleFrame frame = new SimpleFrame(
+                uiContext, ui, title, getFont(ui), top, bottom
+        );
+//        app.getUIContext().positionHalfScreenLeft(frame);
+        
+        frame.pack();
+        frame.setVisible(true);
+        
+        if(block) {
+            
+            final AbstractButton [] buttons = Arrays.asList(top, bottom).stream().filter((button) -> button != null).collect(Collectors.toList()).toArray(new AbstractButton[0]);
+            
+            if(buttons != null && buttons.length != 0) {
+                this.blockWindowTillButtonClick(frame, buttons);
+            }else{
+                this.blockWindowTillCloseButtonClick(frame);
+            }
+        }
+    }
 
     @Override
     public void displayWithTopAndBottomActionButtons(
@@ -50,8 +105,7 @@ public class UIDisplayHandlerImpl implements UIDisplayHandler {
         final JButton bottom = new JButton(buttonText);
         
         final SimpleFrame frame = new SimpleFrame(
-                uiContext, ui, title, new Font(Font.MONOSPACED, Font.BOLD, 24),
-                top, bottom, actionCommand
+                uiContext, ui, title, getFont(ui), top, bottom, actionCommand
         );
 //        app.getUIContext().positionHalfScreenLeft(frame);
         

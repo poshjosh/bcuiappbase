@@ -26,17 +26,20 @@ import javax.swing.text.JTextComponent;
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 11, 2017 1:52:36 PM
  */
-public class DateUIUpdaterImpl implements DateUIUpdater<DateTimePanel> {
+public class DateUIUpdaterImpl implements DateUIUpdater<DatePanel> {
 
     public DateUIUpdaterImpl() { }
     
     @Override
-    public void update(DateTimePanel datePanel, Calendar cal) {
+    public void update(DatePanel datePanel, Calendar cal) {
         this.updateYear(datePanel.getYearCombobox(), cal);
         this.updateMonth(datePanel.getMonthCombobox(), cal);
         this.updateField(datePanel.getDayTextfield(), cal, Calendar.DAY_OF_MONTH);
-        this.updateField(datePanel.getHoursTextfield(), cal, Calendar.HOUR_OF_DAY);
-        this.updateField(datePanel.getMinutesTextfield(), cal, Calendar.MINUTE);
+        if(datePanel instanceof DateTimePanel) {
+            final DateTimePanel dateTimePanel = (DateTimePanel)datePanel;
+            this.updateField(dateTimePanel.getHoursTextfield(), cal, Calendar.HOUR_OF_DAY);
+            this.updateField(dateTimePanel.getMinutesTextfield(), cal, Calendar.MINUTE);
+        }
     }
     
     /**

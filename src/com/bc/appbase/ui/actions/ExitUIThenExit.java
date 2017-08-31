@@ -24,7 +24,7 @@ import com.bc.jpa.sync.JpaSync;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.bc.appbase.App;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 20, 2017 7:33:54 PM

@@ -42,6 +42,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.text.JTextComponent;
@@ -110,7 +111,7 @@ public class ComponentModelImpl implements ComponentModel {
     }
     
     protected Component doGetComponent(Class parentType, Class valueType, String name, Object value) {
-        
+//System.out.println("doGetComponent(..) "+valueType.getSimpleName()+' '+name+'='+value+". @"+this.getClass());                        
         final Component component;
         
         List<Selection> selectionList;
@@ -121,9 +122,9 @@ public class ComponentModelImpl implements ComponentModel {
             
         }else if(Date.class.isAssignableFrom(valueType)) {
             
-            component = this.getDateTimeComponent(valueType, name, value);
+            component = this.getDateComponent(valueType, name, value);
             
-        }else if( ! (selectionList = this.getSelectionValues(valueType)).isEmpty()) {
+        }else if( ! (selectionList = this.getSelectionValues(parentType, valueType, name, value)).isEmpty()) {
             
             if(logger.isLoggable(Level.FINER)) {
                 logger.log(Level.FINER, "Value type: {0}, {1}={2}\nSelection values: {3}", 
@@ -131,6 +132,10 @@ public class ComponentModelImpl implements ComponentModel {
             }
             
             component = this.getSelectionComponent(valueType, name, value, selectionList);
+            
+        }else if(this.isPasswordName(name)) {    
+            
+            component = this.getPasswordComponent(valueType, name, value);
             
         }else{
             
@@ -148,9 +153,15 @@ public class ComponentModelImpl implements ComponentModel {
 
         return component;
     }
+    
+    @Override
+    public boolean isPasswordName(String name) {
+        return name.toLowerCase().contains("password");
+    }
 
     @Override
-    public List<Selection> getSelectionValues(Class valueType) {
+    public List<Selection> getSelectionValues(Class parentType, Class valueType, String name, Object value) {
+//System.out.println("getSelectionValues(..) "+valueType.getSimpleName()+' '+name+'='+value+". @"+this.getClass());                        
         final List<Selection> values = selectionValues.getSelectionValues(valueType);
         return values;
     }
@@ -162,11 +173,13 @@ public class ComponentModelImpl implements ComponentModel {
         
         Object value;
         
-        if(component instanceof JTextComponent) {
+        if(component instanceof JPasswordField) {
+            value = ((JPasswordField)component).getPassword();
+        }else if(component instanceof JTextComponent) {
             value = ((JTextComponent)component).getText();
         }else if(component instanceof AbstractButton) {
             value = ((AbstractButton)component).isSelected();
-        }else if(component instanceof DateTimePanel) {
+        }else if(component instanceof DatePanel) {
             value = dateFromUIBuilder.ui(component).build(null);
         }else if(component instanceof ItemSelectable) {
             final Object [] selected = ((ItemSelectable)component).getSelectedObjects();
@@ -245,14 +258,18 @@ public class ComponentModelImpl implements ComponentModel {
         
         value = this.format(value);
         
-        if(component instanceof JTextComponent) {
-            
+        if(component instanceof JPasswordField) {
+            if(value instanceof char[]) {
+                ((JPasswordField)component).setText(new String((char[])value));
+            }else{
+                ((JPasswordField)component).setText(value==null?null:value.toString());
+            }
+        }else if(component instanceof JTextComponent) {
             ((JTextComponent)component).setText(value==null?null:String.valueOf(value));
-            
         }else if(component instanceof AbstractButton) {
             ((AbstractButton)component).setSelected(Boolean.valueOf(String.valueOf(value)));
-        }else if(component instanceof DateTimePanel) {
-            final DateTimePanel dateTimePanel = (DateTimePanel)component;
+        }else if(component instanceof DatePanel) {
+            final DatePanel dateTimePanel = (DatePanel)component;
             final Calendar cal = Calendar.getInstance();
             if(value != null) {
                 Date date = (Date)value;
@@ -288,11 +305,11 @@ public class ComponentModelImpl implements ComponentModel {
         return component;
     }
     
-    public Component getDateTimeComponent(Class valueType, String name, Object value) {
+    public Component getDateComponent(Class valueType, String name, Object value) {
         final JPanel panel = new JPanel();
         final Font font = this.componentProperties.getFont(panel);
         final int height = this.componentProperties.getHeight(panel);
-        final DateTimePanel dtp = new DateTimePanel(font, height, 78, height, 4);
+        final DatePanel dtp = new DatePanel(font, height, 78, height, 4);
         for(Component c : dtp.getComponents()) {
             if(c instanceof JTextField) {
                 final JTextField tf = ((JTextField)c);
@@ -306,6 +323,11 @@ public class ComponentModelImpl implements ComponentModel {
     public Component getSelectionComponent(Class valueType, 
             String name, Object value, List<Selection> selectionList) {
         final JComboBox component = new JComboBox(selectionList.toArray(new Selection[0]));
+        return component;
+    }
+    
+    public Component getPasswordComponent(Class valueType, String name, Object value) {
+        final JPasswordField component = new JPasswordField();
         return component;
     }
     

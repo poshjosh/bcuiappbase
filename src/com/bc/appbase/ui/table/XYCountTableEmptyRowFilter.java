@@ -16,7 +16,7 @@
 
 package com.bc.appbase.ui.table;
 
-import com.bc.appbase.ui.table.model.XYCountTableModel;
+import com.bc.appcore.table.model.XYCountTableModel;
 import java.util.Objects;
 import java.util.function.Predicate;
 

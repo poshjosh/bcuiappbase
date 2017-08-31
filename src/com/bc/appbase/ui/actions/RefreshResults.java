@@ -23,7 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.bc.appcore.actions.Action;
 import com.bc.appbase.App;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
 import com.bc.appcore.jpa.SearchContext;
 import com.bc.jpa.search.SearchResults;

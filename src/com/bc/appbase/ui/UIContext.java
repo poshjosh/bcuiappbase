@@ -16,8 +16,10 @@
 
 package com.bc.appbase.ui;
 
+import com.bc.appbase.ui.table.model.TableModelDisplayFormatImpl;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
 import com.bc.appcore.jpa.model.ResultModel;
+import com.bc.appcore.table.model.TableModelDisplayFormat;
 import com.bc.jpa.search.SearchResults;
 import com.bc.ui.table.cell.ColumnWidths;
 import java.awt.Container;
@@ -63,6 +65,10 @@ public interface UIContext {
     void scrollTo(JTable table, int start, int end);
     
     TableCellUIFactory getTableCellUIFactory(TableModel tableModel, Class entityType, int serialColumnIndex);
+    
+    default TableModelDisplayFormat getTableModelDisplayFormat(int serialColumnIndex) {
+        return new TableModelDisplayFormatImpl(this.getTableCellDisplayFormat(serialColumnIndex));
+    }
     
     TableCellDisplayFormat getTableCellDisplayFormat(int serialColumnIndex);
         

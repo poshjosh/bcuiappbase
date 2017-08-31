@@ -19,7 +19,7 @@ package com.bc.appbase.ui.table;
 import com.bc.appbase.App;
 import com.bc.appbase.ui.FrameForTable;
 import com.bc.appbase.ui.UIContext;
-import com.bc.appbase.ui.table.model.EntityTableModel;
+import com.bc.appcore.table.model.EntityTableModel;
 import com.bc.appcore.jpa.model.ResultModel;
 import com.bc.appcore.util.RelationAccess;
 import com.bc.jpa.paging.PaginatedList;
@@ -37,7 +37,7 @@ import javax.persistence.Entity;
 import javax.swing.JFrame;
 import javax.swing.JTable;
 import javax.swing.table.TableModel;
-import com.bc.appbase.ui.table.model.XYCountTableMetaData;
+import com.bc.appcore.table.model.XYCountTableMetaData;
 import com.bc.appcore.predicates.AcceptAll;
 
 /**

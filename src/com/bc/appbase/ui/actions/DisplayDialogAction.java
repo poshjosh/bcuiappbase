@@ -19,7 +19,7 @@ package com.bc.appbase.ui.actions;
 import com.bc.appbase.App;
 import com.bc.appbase.ui.dialog.DialogManager;
 import com.bc.appcore.actions.Action;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.parameter.InvalidParameterException;
 import com.bc.appcore.parameter.ParameterException;
 import java.io.File;
@@ -31,7 +31,7 @@ import javax.swing.JFileChooser;
 /**
  * @author Chinomso Bassey Ikwuagwu on Apr 8, 2017 8:13:44 PM
  */
-public class DisplayDialog implements Action<App,File> {
+public class DisplayDialogAction implements Action<App,File> {
     
     public static final String TITLE = ParamNames.TITLE;
     public static final String CURRENT_DIR = "currentDir";
@@ -40,11 +40,11 @@ public class DisplayDialog implements Action<App,File> {
     private final int dialogType;
     private final int fileSelectionMode;
 
-    public DisplayDialog(int dialogType) {
+    public DisplayDialogAction(int dialogType) {
         this(dialogType, JFileChooser.FILES_AND_DIRECTORIES);
     }
     
-    public DisplayDialog(int dialogType, int fileSelectionMode) {
+    public DisplayDialogAction(int dialogType, int fileSelectionMode) {
         this.dialogType = dialogType;
         this.fileSelectionMode = fileSelectionMode;
     }
@@ -84,7 +84,7 @@ public class DisplayDialog implements Action<App,File> {
         javax.swing.filechooser.FileFilter fileFilter = new javax.swing.filechooser.FileFilter() {
             @Override
             public boolean accept(File f) {
-                return DisplayDialog.this.accept(f);
+                return DisplayDialogAction.this.accept(f);
             }
             @Override
             public String getDescription() {

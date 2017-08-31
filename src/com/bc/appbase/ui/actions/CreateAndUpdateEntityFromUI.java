@@ -22,7 +22,7 @@ import com.bc.appcore.parameter.ParameterExtractor;
 import com.bc.appbase.ui.ComponentModel;
 import com.bc.appbase.ui.builder.FromUIBuilder;
 import com.bc.appcore.actions.Action;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.exceptions.TargetNotFoundException;
 import com.bc.appcore.jpa.SelectionContext;
 import com.bc.appcore.parameter.ParameterException;
@@ -30,7 +30,6 @@ import com.bc.appcore.util.RelationAccess;
 import java.awt.Window;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,12 +59,10 @@ public class CreateAndUpdateEntityFromUI<E> implements Action<App, E> {
      
         final Class entityType = (Class)params.get(ParamNames.ENTITY_TYPE);
         
-        final Comparator comparator = (Comparator)params.get(Comparator.class.getName());
-        
-        return this.execute(app, entityType, ui, comparator);
+        return this.execute(app, entityType, ui);
     }    
                 
-    public E execute(App app, Class entityType, JComponent ui, Comparator comparator) 
+    public E execute(App app, Class entityType, JComponent ui) 
             throws ParameterException, TaskExecutionException {
             
         final Window window = (Window)ui.getTopLevelAncestor();
@@ -94,7 +91,7 @@ public class CreateAndUpdateEntityFromUI<E> implements Action<App, E> {
             
             final List entities = this.buildEntities(app, selectedEntity, entityType, entityUpdate);
             
-            this.updateDatabase(app, entities, comparator);
+            this.updateDatabase(app, entities);
             
             try{
                 app.getAction(ActionCommands.REFRESH_ALL_RESULTS).execute(app, Collections.EMPTY_MAP);
@@ -171,12 +168,11 @@ public class CreateAndUpdateEntityFromUI<E> implements Action<App, E> {
         }
     }
     
-    public Collection updateDatabase(App app, Collection entities, Comparator comparator) 
+    public Collection updateDatabase(App app, Collection entities) 
             throws ParameterException, TaskExecutionException {
         
         final Map<String, Object> params = new HashMap(4, 0.75f);
         params.put("entities", entities);
-        params.put(java.util.Comparator.class.getName(), comparator);
         
         return (Collection)app.getAction(ActionCommands.UPDATE_DATABASE_WITH_ENTITIES).execute(app, params);
     }

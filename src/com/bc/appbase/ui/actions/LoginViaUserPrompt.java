@@ -14,32 +14,23 @@
  * limitations under the License.
  */
 
-package com.bc.appbase.ui.table.model;
+package com.bc.appbase.ui.actions;
 
-import com.bc.appcore.jpa.model.ResultModel;
-import com.bc.jpa.search.SearchResults;
-import java.util.List;
+import com.bc.appbase.App;
+import java.util.Map;
+import javax.security.auth.login.LoginException;
 
 /**
- * @author Chinomso Bassey Ikwuagwu on Jun 8, 2017 3:17:56 PM
+ * @author Chinomso Bassey Ikwuagwu on Jul 29, 2017 8:33:35 PM
  */
-public interface XYTableMetaData<X, Y, Z> {
+public class LoginViaUserPrompt extends AuthenticationAction {
 
-    ResultModel getResultModel();
+    public LoginViaUserPrompt() {
+        super("Enter Login Details", "Login Successful", "Login Failed");
+    }
 
-    SearchResults getSearchResults();
-
-    XYValues<X, Y, Z> getXyValues();
-
-    List<X> getXValues();
-
-    Class getxEntityType();
-
-    List<Y> getYValues();
-
-    Class getyEntityType();
-    
-    int getRowCount();
-    
-    int getColumnCount();
+    @Override
+    public void doExecute(App app, Map params) throws LoginException {
+        app.getUser().login(params);
+    }
 }

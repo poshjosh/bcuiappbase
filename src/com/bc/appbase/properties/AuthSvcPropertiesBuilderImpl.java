@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-package com.bc.appbase.ui.table.model;
+package com.bc.appbase.properties;
+
+import com.bc.appcore.properties.AuthSvcNameToLabel;
+import com.bc.appcore.properties.AuthSvcProperties;
 
 /**
- * @author Chinomso Bassey Ikwuagwu on Jun 8, 2017 10:24:42 AM
+ * @author Chinomso Bassey Ikwuagwu on Aug 19, 2017 11:37:10 PM
  */
-public interface XYCountTableMetaData<X, Y> extends XYTableMetaData<X, Y, Integer>{
+public class AuthSvcPropertiesBuilderImpl extends PropertiesBuilderImpl 
+        implements AuthSvcPropertiesBuilder {
+
+    public AuthSvcPropertiesBuilderImpl() { 
+        this.type(AuthSvcProperties.class);
+    }
     
     @Override
-    XYValues<X, Y, Integer> getXyValues();
-
-    String getSumRowName();
-
-    String getSumColumnName();
-    
-    int getSumRowIndex();
-    
-    int getSumColumnIndex();
+    public AuthSvcPropertiesBuilder optionsProvider(String dialogTitle) {
+        this.optionsProvider(dialogTitle, new AuthSvcNameToLabel()); 
+        return this;
+    }
 }

@@ -19,20 +19,18 @@ package com.bc.appbase.ui.actions;
 import com.bc.appbase.App;
 import com.bc.appcore.parameter.ParameterExtractor;
 import com.bc.appcore.actions.Action;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.parameter.ParameterException;
 import com.bc.appcore.util.RelationAccess;
 import com.bc.jpa.EntityController;
 import com.bc.jpa.EntityUpdater;
 import com.bc.jpa.JpaContext;
 import com.bc.jpa.dao.Dao;
-import com.bc.jpa.sync.SlaveUpdates;
 import com.bc.util.JsonFormat;
 import com.bc.util.MapBuilder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -50,25 +48,13 @@ public class UpdateDatabaseWithEntities implements Action<App, Collection> {
         
         final Collection entities = (Collection)parameterExtractor.getFirstValue(params, Collection.class);
         
-        final Comparator comprator = parameterExtractor.getFirstValue(params, Comparator.class);
-
-        return this.updateDatabase(app, this.sort(entities, comprator));
+        final List entityList = new ArrayList(entities);
+        
+        Collections.sort(entityList, app.getEntityOrderComparator());
+        
+        return this.updateDatabase(app, entityList);
     }
     
-    public List sort(Collection entitySet, Comparator comparator) {
-        
-        final List entityList = new ArrayList(entitySet);
-        
-        if(comparator != null) {
-
-            Collections.sort(entityList, comparator);
-
-            logger.log(Level.FINE, "AFTER SORT: {0}", entityList);
-        }
-        
-        return entityList;
-    }
-
     public List updateDatabase(App app, List entities) {
         
         final RelationAccess relationAccess = app.getOrException(RelationAccess.class);
@@ -77,8 +63,6 @@ public class UpdateDatabaseWithEntities implements Action<App, Collection> {
         
         final JpaContext jpaContext = app.getJpaContext();
         
-        final SlaveUpdates slaveUpdates = app.getSlaveUpdates();
-
         try(Dao dao = jpaContext.getDao(entities.get(0).getClass())) {
         
             dao.begin();
@@ -101,13 +85,11 @@ public class UpdateDatabaseWithEntities implements Action<App, Collection> {
                 if(persistNotMerge) {
 
                     dao.persist(entity);
-                    slaveUpdates.addPersist(entity);
                     
                 }else{
                     
                     this.edit(jpaContext, entity);
 //                    dao.merge(entity); 
-                    slaveUpdates.addMerge(entity);
                 }
             }
   

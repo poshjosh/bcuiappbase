@@ -18,7 +18,7 @@ package com.bc.appbase.ui.actions;
 
 import com.bc.appbase.App;
 import com.bc.appcore.actions.Action;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.parameter.InvalidParameterException;
 import com.bc.appcore.parameter.ParameterException;
 import com.bc.appcore.parameter.ParameterNotFoundException;

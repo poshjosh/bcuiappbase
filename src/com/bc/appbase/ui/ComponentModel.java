@@ -16,14 +16,15 @@
 
 package com.bc.appbase.ui;
 
-import com.bc.appcore.util.SelectionValues;
+import com.bc.appcore.util.Selection;
 import java.awt.Component;
 import java.awt.Font;
+import java.util.List;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Apr 6, 2017 11:05:31 AM
  */
-public interface ComponentModel extends SelectionValues<Class> {
+public interface ComponentModel {
     
     interface ComponentProperties {
         
@@ -39,12 +40,16 @@ public interface ComponentModel extends SelectionValues<Class> {
 
         boolean isEditable(Component component);
     }
-    
+
+    boolean isPasswordName(String name);
+        
     ComponentModel deriveNewFrom(ComponentProperties properties);
     
     ComponentProperties getComponentProperties();
     
     Component getComponent(Class parentType, Class valueType, String name, Object value);
+    
+    List<Selection> getSelectionValues(Class parentType, Class valueType, String name, Object value);
     
     Object getValue(Component component, Object outputIfNone);
     

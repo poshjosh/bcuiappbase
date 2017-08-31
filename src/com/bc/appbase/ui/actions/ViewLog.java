@@ -18,9 +18,8 @@ package com.bc.appbase.ui.actions;
 
 import com.bc.appbase.App;
 import com.bc.appcore.actions.Action;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.parameter.ParameterException;
-import com.bc.appcore.util.LoggingConfigManager;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -33,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import com.bc.appcore.util.LoggingConfigManager;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on May 4, 2017 6:38:10 PM
@@ -59,7 +59,7 @@ public class ViewLog implements Action<App, Boolean> {
             
             final int maxLen = 10_000;
 
-            final String logCfgFile = app.getFilenames().getLoggingConfigFile();
+            final String logCfgFile = app.getPropertiesPaths().getLogging().toString();
             
             logger.log(Level.FINER, "Logging config file: {0}", logCfgFile);
             

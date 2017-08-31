@@ -21,7 +21,9 @@ package com.bc.appbase.ui.actions;
  */
 public interface ParamNames {
     
-    String LOOK_AND_FEEL_NAME = SetLookAndFeel.LOOK_AND_FEEL_NAME;
+    String INTERVAL = "interval";
+    
+    String TIMEOUT = "timeout";
     
     String EDITABLE = "editable";
 
@@ -45,9 +47,9 @@ public interface ParamNames {
     
     String ACTION_COMMAND = "actionCommand";
     
-    String CURRENT_DIR = DisplayDialog.CURRENT_DIR;
+    String CURRENT_DIR = DisplayDialogAction.CURRENT_DIR;
     
-    String DESCRIPTION_OF_FILE_TYPE = DisplayDialog.DESCRIPTION_OF_FILE_TYPE;
+    String DESCRIPTION_OF_FILE_TYPE = DisplayDialogAction.DESCRIPTION_OF_FILE_TYPE;
 
     String SHEET_NAME = "sheetName";
     

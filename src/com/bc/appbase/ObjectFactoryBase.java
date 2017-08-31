@@ -115,6 +115,10 @@ public class ObjectFactoryBase extends com.bc.appcore.ObjectFactoryImpl {
                     this.getApp(), this.componentProperties, contentLengthAboveWhichTextAreaIsUsed
             );
 
+        }else if(type.equals(ComponentProperties.class)){
+            
+            output = this.componentProperties;
+            
         }else if(type.equals(DateFromUIBuilder.class)){
 
             output = new DateFromUIBuilderImpl();

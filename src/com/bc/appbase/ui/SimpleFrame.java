@@ -35,8 +35,10 @@ import javax.swing.JScrollPane;
  */
 public class SimpleFrame extends JFrame {
 
-    public SimpleFrame(UIContext uiContext, Container ui, String title, Font font, AbstractButton button) throws HeadlessException {
-        this(uiContext, ui, title, font, button, null, null);
+    public SimpleFrame(UIContext uiContext, Container ui, String title, Font font, 
+            AbstractButton top, AbstractButton bottom) throws HeadlessException {
+        
+        this(uiContext, ui, title, font, top, bottom, null);
     }
 
     public SimpleFrame(UIContext uiContext, Container ui, String title, Font font, 

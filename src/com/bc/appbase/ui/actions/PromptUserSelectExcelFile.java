@@ -31,15 +31,15 @@ import java.util.logging.Logger;
 /**
  * @author Chinomso Bassey Ikwuagwu on Mar 24, 2017 9:52:10 PM
  */
-public class PromptSelectExcelFile implements Action<App, File> {
+public class PromptUserSelectExcelFile implements Action<App, File> {
 
     @Override
     public File execute(App app, Map<String, Object> params) 
-            throws com.bc.appcore.actions.TaskExecutionException {
+            throws com.bc.appcore.exceptions.TaskExecutionException {
         try{
             return this.execute(app.getOrException(DialogManager.class));
         }catch(IOException | BiffException e) {
-            throw new com.bc.appcore.actions.TaskExecutionException(e);
+            throw new com.bc.appcore.exceptions.TaskExecutionException(e);
         }
     }
 

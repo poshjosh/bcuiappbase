@@ -18,10 +18,10 @@ package com.bc.appbase.ui.actions;
 
 import com.bc.appbase.App;
 import com.bc.appbase.ui.dialog.DialogManager;
-import com.bc.appbase.ui.table.model.SearchResultsTableModel;
-import com.bc.appbase.ui.table.model.TableModelFromView;
+import com.bc.appcore.table.model.SearchResultsTableModel;
+import com.bc.appcore.table.model.TableModelFromView;
 import com.bc.appcore.actions.Action;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
 import com.bc.appcore.jpa.model.ResultModel;
 import com.bc.appcore.parameter.ParameterException;

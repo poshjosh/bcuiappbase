@@ -47,7 +47,7 @@ public class PromptSelectEntityType implements Action<App, Class> {
         final Set<Class> classSet = this.getOptions(app, params);
         
         final Predicate<Class> filter = app.getOrException(ParameterExtractor.class)
-                .getFirstValue(params, Predicate.class);
+                .getFirstValue(params, Predicate.class, (cls) -> true);
         
         return this.execute(app, classSet, filter);
     }

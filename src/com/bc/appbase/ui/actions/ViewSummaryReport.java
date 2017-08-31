@@ -28,11 +28,11 @@ import com.bc.appbase.ui.table.TableRowFilter;
 import com.bc.appbase.ui.table.XYCountTableCellSelectionHandler;
 import com.bc.appbase.ui.table.XYCountTableEmptyColumnFilter;
 import com.bc.appbase.ui.table.XYCountTableEmptyRowFilter;
-import com.bc.appbase.ui.table.model.XYCountTableModel;
-import com.bc.appbase.ui.table.model.XYCountTableModelBuilder;
-import com.bc.appbase.ui.table.model.XYCountTableModelBuilderImpl;
+import com.bc.appcore.table.model.XYCountTableModel;
+import com.bc.appcore.table.model.XYCountTableModelBuilder;
+import com.bc.appcore.table.model.XYCountTableModelBuilderImpl;
 import com.bc.appcore.actions.Action;
-import com.bc.appcore.actions.TaskExecutionException;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.exceptions.ObjectFactoryException;
 import com.bc.appcore.jpa.model.ResultModel;
 import com.bc.appcore.parameter.ParameterException;
@@ -98,6 +98,7 @@ public class ViewSummaryReport implements Action<App, TableModel> {
             final XYCountTableModelBuilder tableModelBuilder = new XYCountTableModelBuilderImpl();
             final XYCountTableModel tableModel = (XYCountTableModel)tableModelBuilder
                     .app(app)
+                    .displayFormat(app.getUIContext().getTableModelDisplayFormat(-1))
                     .resultModel(resultModel)
                     .searchResults(searchResults)
                     .xEntityType(xEntityType)

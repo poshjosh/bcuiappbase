@@ -92,7 +92,7 @@ public class MatchExcelToDatabaseColumnsPromptImpl implements MatchExcelToDataba
         
         final Function<String, String> comboNameFmt = (name) -> name+'.'+JCheckBox.class.getSimpleName();
         
-        final ThirdComponentProvider thirdComponentProvider = (valueType, name, value, label, component, outputIfNone) -> {
+        final ThirdComponentProvider thirdComponentProvider = (parentType, valueType, name, value, label, component, outputIfNone) -> {
             final JCheckBox checkBox = new JCheckBox("Cell contains multiple values");
             checkBox.setName(comboNameFmt.apply(name));
             return checkBox;
@@ -110,8 +110,8 @@ public class MatchExcelToDatabaseColumnsPromptImpl implements MatchExcelToDataba
         }
           
         app.getUIContext().getDisplayHandler().displayWithTopAndBottomActionButtons(
-                ui, "Select Matching Name(s)", " OK ", null, true);
-        
+                ui, "Select Matching Name(s)", " OK ", (String)null, true);
+
         final Map selections = this.getSelectionsFromUI(app, ui, excelCols, noSelectionName);
 
         final Predicate isNullOrEmpty = (e) -> e == null || 

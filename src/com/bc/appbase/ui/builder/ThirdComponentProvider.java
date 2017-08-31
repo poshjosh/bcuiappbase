@@ -24,10 +24,10 @@ import javax.swing.JLabel;
  */
 public interface ThirdComponentProvider {
     
-    ThirdComponentProvider PROVIDE_NONE = (valueType, name, value, label, component, outputIfNone) -> {
+    ThirdComponentProvider PROVIDE_NONE = (parentType, valueType, name, value, label, component, outputIfNone) -> {
         return null;
     };
 
-    Component get(Class valueType, String name, Object value, 
+    Component get(Class parentType, Class valueType, String name, Object value, 
             JLabel label, Component component, Component outputIfNone);
 }
