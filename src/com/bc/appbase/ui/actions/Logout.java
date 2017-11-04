@@ -41,7 +41,7 @@ public class Logout implements Action<App, Boolean> {
         
         final Boolean output = user.logout();
         
-        app.getAction(ActionCommands.UPDATE_LOGIN_BUTTON_TEXT).executeSilently(app, null);
+        app.getAction(ActionCommands.UPDATE_LOGIN_BUTTON_TEXT).executeSilently(app);
         
         final String msg = output ? "Logout Successful" : "Logout Failed!";
         

@@ -17,8 +17,8 @@
 package com.bc.appbase.ui.table.cell;
 
 import com.bc.appbase.App;
-import com.bc.appbase.ui.ComponentModel;
-import com.bc.appbase.ui.ComponentModelImpl;
+import com.bc.appbase.ui.components.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModelImpl;
 import com.bc.appbase.ui.DateFromUIBuilder;
 import com.bc.appbase.ui.DateUIUpdater;
 import com.bc.appcore.util.SelectionValues;

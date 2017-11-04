@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.bc.appbase.ui;
+package com.bc.appbase.ui.actions;
 
-import java.awt.Container;
-import java.util.Properties;
+import javax.swing.JFileChooser;
 
 /**
- * @author Chinomso Bassey Ikwuagwu on Jul 22, 2017 11:04:08 AM
+ * @author Chinomso Bassey Ikwuagwu on Sep 6, 2017 12:27:09 PM
  */
-public interface PropertiesContainerManager<C extends Container> {
+public class DisplayOpenFileDialogAction extends DisplayOpenDialog {
 
-    C buildUI(Properties props);
-
-    Properties extractProperties(C container);
+    public DisplayOpenFileDialogAction() {
+        super(JFileChooser.FILES_ONLY);
+    }
 }
+

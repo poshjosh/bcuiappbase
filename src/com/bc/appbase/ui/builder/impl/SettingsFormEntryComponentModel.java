@@ -16,8 +16,9 @@
 
 package com.bc.appbase.ui.builder.impl;
 
+import com.bc.appbase.ui.components.FormEntryComponentModelImpl;
 import com.bc.appbase.App;
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appbase.ui.builder.ThirdComponentProvider;
 import com.bc.appcore.util.Settings;
 import java.util.Objects;

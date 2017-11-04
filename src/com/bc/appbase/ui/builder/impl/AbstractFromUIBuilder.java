@@ -16,7 +16,7 @@
 
 package com.bc.appbase.ui.builder.impl;
 
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appbase.ui.builder.FromUIBuilder;
 import java.awt.Component;
 

@@ -18,7 +18,7 @@ package com.bc.appbase.ui.actions;
 
 import com.bc.jpa.search.SearchResults;
 import com.bc.appbase.App;
-import com.bc.appbase.ui.ResultsFrame;
+import com.bc.appbase.ui.SearchResultsFrame;
 import com.bc.appbase.ui.UIContext;
 import com.bc.appcore.jpa.SearchContext;
 
@@ -59,13 +59,15 @@ public class ExecuteSelectQuery extends AbstractExecuteQuery {
     private void createAndShowSearchResultsFrame(
             App app, SearchResults searchResults, Class resultType, String KEY, Object msg) {
         
-        final ResultsFrame frame = new ResultsFrame();
+        final SearchResultsFrame frame = new SearchResultsFrame();
         
         final UIContext uiContext = app.getUIContext();
         
+        frame.init(uiContext, msg==null?null:msg.toString(), false);
+        
         final SearchContext searchContext = app.getSearchContext(resultType);
         
-        frame.loadSearchResults(uiContext, searchContext, searchResults, KEY, msg, false, false);
+        frame.loadSearchResults(searchContext, searchResults, KEY, false);
         
         frame.setVisible(true);
     }
@@ -74,7 +76,7 @@ public class ExecuteSelectQuery extends AbstractExecuteQuery {
         
         SearchResults searchResults = app.getUIContext().getLinkedSearchResults(KEY, null);
         if(searchResults == null) {
-            searchResults = app.getSearchContext(resultType).getSearchResults(sql);
+            searchResults = app.getSearchContext(resultType).executeNativeQuery(sql);
         }
         
         return searchResults;

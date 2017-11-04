@@ -27,7 +27,6 @@ import com.bc.appcore.parameter.ParameterException;
 import com.bc.appcore.parameter.ParameterNotFoundException;
 import java.io.IOException;
 import java.util.Map;
-import javax.swing.JFrame;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on May 4, 2017 7:11:33 PM
@@ -47,7 +46,9 @@ public class DisplayText implements Action<App, Boolean> {
 
         try{
             
-            final JFrame frame = new JEditorPaneFrame(app.getUIContext(), contentType, text, null, title);
+            final JEditorPaneFrame frame = new JEditorPaneFrame(app.getUIContext(), contentType, title);
+            
+            frame.setText(text);
 
             app.getUIContext().positionHalfScreenRight(frame);
 

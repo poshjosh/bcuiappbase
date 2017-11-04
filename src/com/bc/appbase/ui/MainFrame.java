@@ -142,24 +142,26 @@ public class MainFrame extends javax.swing.JFrame {
             }
         });
         
+        final UIContext uiContext = app.getUIContext();
+        
         this.getAboutMenuItem().setActionCommand(this.aboutMenuItemActionCommand);
         if(this.aboutMenuItemActionCommand != null) {
-            app.getUIContext().addActionListeners(this, this.getAboutMenuItem());
+            uiContext.addActionListeners(this, this.getAboutMenuItem());
         }
         
         this.getExitMenuItem().setActionCommand(ActionCommands.EXIT_UI_THEN_EXIT);
         this.getSettingsMenuItem().setActionCommand(ActionCommands.DISPLAY_SETTINGS_UI);
         this.getDatabaseSettingsMenuItem().setActionCommand(ActionCommands.DISPLAY_DATABASE_OPTIONS);
-        this.getViewPendingUpdatesMenuItem().setActionCommand(ActionCommands.DISPLAY_PENDING_MASTER_UPDATES);
+        this.getViewPendingUpdatesMenuItem().setActionCommand(ActionCommands.DISPLAY_PENDING_SLAVE_UPDATES);
         this.getChangeLogLevelMenuItem().setActionCommand(ActionCommands.CHANGE_LOG_LEVEL);
         this.getViewLogMenuItem().setActionCommand(ActionCommands.VIEW_LOG);
-        this.getRefreshMenuItem().setActionCommand(ActionCommands.RELOAD_MAIN_RESULTS);
+        this.getRefreshMenuItem().setActionCommand(ActionCommands.REFRESH_MAIN_RESULTS);
         this.getAddNewRecordMenuItem().setActionCommand(ActionCommands.DISPLAY_ADD_SELECTION_TYPE_UI);
         this.getViewRecordMenuItem().setActionCommand(ActionCommands.DISPLAY_SELECTION_TYPE_TABLE);
         this.getLoginMenuItem().setActionCommand(ActionCommands.LOGIN_OR_LOGOUT);
         this.getNewUserMenuItem().setActionCommand(ActionCommands.NEWUSER_VIA_USER_PROMPT);
         
-        app.getUIContext().addActionListeners(this, 
+        uiContext.addActionListeners(this, 
                 this.getExitMenuItem(), 
                 this.getSettingsMenuItem(), this.getDatabaseSettingsMenuItem(), this.getViewPendingUpdatesMenuItem(),
                 this.getChangeLogLevelMenuItem(), this.getViewLogMenuItem(),
@@ -167,21 +169,24 @@ public class MainFrame extends javax.swing.JFrame {
                 this.getViewRecordMenuItem(),
                 this.getLoginMenuItem(), this.getNewUserMenuItem());
         
-        this.fileMenu.addActionListenerToDefaultMenuItems(app.getUIContext(),
+        this.fileMenu.addActionListenerToDefaultMenuItems(uiContext,
                 this.getSearchResultsPanel().getSearchResultsTable());
         
         this.getViewSummaryReportMenuItem().setActionCommand(ActionCommands.VIEW_SUMMARY_REPORT);
         
-        app.getUIContext().addActionListeners(
+        uiContext.addActionListeners(
                 this.getSearchResultsPanel().getSearchResultsTable(), 
                 this.getViewSummaryReportMenuItem());
 
         this.init(app, this.topPanel);
         
-        this.getSearchResultsPanel().init(app.getUIContext());
+        this.getSearchResultsPanel().init(uiContext);
         
-        if(app.getUIContext().getImageIcon() != null) {
-            this.setIconImage(app.getUIContext().getImageIcon().getImage());
+        this.getSearchResultsPanel().getSearchResultsTable()
+                .addMouseListener(uiContext.getMouseListener(this.getSearchResultsPanel()));
+        
+        if(uiContext.getImageIcon() != null) {
+            this.setIconImage(uiContext.getImageIcon().getImage());
         }
     }
     
@@ -196,7 +201,7 @@ public class MainFrame extends javax.swing.JFrame {
     
     public void reset(App app, SearchResultsPanel resultsPanel) { 
         
-        resultsPanel.reset(app, null);
+        resultsPanel.reset();
     }
 
     @SuppressWarnings("unchecked")

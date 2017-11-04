@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.bc.appbase.ui;
+package com.bc.appbase.ui.components;
 
-import com.bc.appbase.ui.ComponentModel.ComponentProperties;
+import com.bc.appbase.ui.components.ComponentModel.ComponentProperties;
 import java.awt.Component;
 import java.awt.Font;
 import javax.swing.JTable;

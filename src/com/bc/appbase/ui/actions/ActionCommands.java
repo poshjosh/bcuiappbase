@@ -23,9 +23,11 @@ import com.bc.appcore.actions.ActionCommandsCore;
  */
 public interface ActionCommands extends ActionCommandsCore {
     
+    String SEARCH_AND_DISPLAY_RESULTS = SearchAndDisplayResults.class.getName();
+    
     String DISPLAY_DATABASE_OPTIONS = DisplayMasterDatabaseOptions.class.getName();
     
-    String DISPLAY_PENDING_MASTER_UPDATES = DisplayPendingMasterUpdates.class.getName();
+    String DISPLAY_PENDING_SLAVE_UPDATES = DisplayPendingSlaveUpdates.class.getName();
     
     String LOGIN_OR_LOGOUT = LoginOrOut.class.getName();
     
@@ -47,9 +49,7 @@ public interface ActionCommands extends ActionCommandsCore {
     
     String UPDATE_DATABASE_WITH_ENTITIES = UpdateDatabaseWithEntities.class.getName();
     
-    String SYNC_DATABASE = SyncDatabase.class.getName();
-    
-    String SYNC_IF_SLAVE_DATABASE_EMPTY = SyncIfSlaveDatabaseEmpty.class.getName();
+    String SYNC_DATABASE_WITH_USER_PROMPT = SyncDatabaseWithUserPrompt.class.getName();
     
     String VIEW_SUMMARY_REPORT = ViewSummaryReport.class.getName();
     
@@ -59,7 +59,7 @@ public interface ActionCommands extends ActionCommandsCore {
     
     String REFRESH_ALL_RESULTS = RefreshAllResults.class.getName();
     
-    String RELOAD_MAIN_RESULTS = ReloadMainResults.class.getName();
+    String REFRESH_MAIN_RESULTS = RefreshMainResults.class.getName();
 
     String REFRESH_RESULTS = RefreshResults.class.getName();
 
@@ -101,9 +101,11 @@ public interface ActionCommands extends ActionCommandsCore {
     
     String DISPLAY_TEXT = DisplayText.class.getName();
     
-    String DISPLAY_OPEN_FOLDER_DIALOG = DisplayOpenFolderDialogAction.class.getName();
-    
     String DISPLAY_OPEN_DIALOG = DisplayOpenDialog.class.getName();
+    
+    String DISPLAY_OPEN_FILE_DIALOG = DisplayOpenFileDialogAction.class.getName();
+    
+    String DISPLAY_OPEN_FOLDER_DIALOG = DisplayOpenFolderDialogAction.class.getName();
     
     String DISPLAY_SAVE_DIALOG = DisplaySaveDialog.class.getName();
     

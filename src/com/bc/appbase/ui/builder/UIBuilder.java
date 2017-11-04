@@ -16,7 +16,7 @@
 
 package com.bc.appbase.ui.builder;
 
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appcore.jpa.SelectionContext;
 import com.bc.appcore.typeprovider.MemberTypeProvider;
 import java.awt.Component;
@@ -36,7 +36,7 @@ public interface UIBuilder<I, O extends Component> {
     
     UIBuilder<I, O> typeProvider(MemberTypeProvider typeProvider);
     
-    UIBuilder<I, O> entryUIProvider(ComponentModel componentModel);
+    UIBuilder<I, O> componentModel(ComponentModel componentModel);
     
     UIBuilder<I, O> editable(Boolean editable);
     

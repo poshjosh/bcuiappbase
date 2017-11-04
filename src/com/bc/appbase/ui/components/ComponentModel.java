@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.bc.appbase.ui;
+package com.bc.appbase.ui.components;
 
 import com.bc.appcore.util.Selection;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.util.List;
 
@@ -31,6 +32,10 @@ public interface ComponentModel {
         ComponentProperties DEFAULT = new ComponentPropertiesImpl();
 
         Font getFont(Component component);
+        
+        default Dimension getDimension(Component component) {
+            return new Dimension(this.getWidth(component), this.getHeight(component));
+        }
 
         int getWidth(Component component);
 

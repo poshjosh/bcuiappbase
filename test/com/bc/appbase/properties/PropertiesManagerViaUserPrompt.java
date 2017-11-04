@@ -17,7 +17,7 @@
 package com.bc.appbase.properties;
 
 import com.bc.appbase.properties.GetOptionsViaUserPrompt;
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import java.io.File;
 import java.util.function.Function;
 import java.util.logging.Logger;

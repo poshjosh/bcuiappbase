@@ -20,7 +20,7 @@ import com.bc.appbase.ui.UIContext;
 import com.bc.appbase.ui.builder.PromptUserSelectOrCreateNew;
 import com.bc.appcore.ObjectFactory;
 import com.bc.appcore.typeprovider.TypeProvider;
-import com.bc.jpa.JpaContext;
+import com.bc.jpa.context.PersistenceUnitContext;
 import com.bc.jpa.exceptions.EntityInstantiationException;
 import com.bc.jpa.search.TextSearch;
 import com.bc.jpa.util.EntityFromMapBuilder;
@@ -39,7 +39,7 @@ public class EntityFromMapBuilderDataFormatter implements EntityFromMapBuilder.F
 
     private static final Logger logger = Logger.getLogger(EntityFromMapBuilderDataFormatter.class.getName());
     
-    private final JpaContext jpaContext;
+    private final PersistenceUnitContext puContext;
     
     private final UIContext uiContext;
     
@@ -48,9 +48,9 @@ public class EntityFromMapBuilderDataFormatter implements EntityFromMapBuilder.F
     private final TypeProvider typeProvider;
     
     public EntityFromMapBuilderDataFormatter(
-            ObjectFactory objectFactory, JpaContext jpaContext, UIContext uiContext) {
+            ObjectFactory objectFactory, PersistenceUnitContext puContext, UIContext uiContext) {
         Objects.requireNonNull(objectFactory);
-        this.jpaContext = Objects.requireNonNull(jpaContext);
+        this.puContext = Objects.requireNonNull(puContext);
         this.uiContext = uiContext;
         this.prompt = objectFactory.getOrException(PromptUserSelectOrCreateNew.class);
         this.typeProvider = objectFactory.getOrException(TypeProvider.class);
@@ -109,7 +109,7 @@ public class EntityFromMapBuilderDataFormatter implements EntityFromMapBuilder.F
             logger.log(Level.FINER, "{0} has {1} {2} = {3}", new Object[]{entityType, columnType, column, value});
         }
         
-        final TextSearch textSearch = this.jpaContext.getTextSearch();
+        final TextSearch textSearch = this.puContext.getTextSearch();
         
         final List foundList = textSearch.search(columnType, String.valueOf(value).trim());
         

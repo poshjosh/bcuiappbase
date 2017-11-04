@@ -16,11 +16,10 @@
 
 package com.bc.appbase.ui;
 
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appbase.ui.table.cell.DefaultTableCellComponentModel;
 import com.bc.appbase.ui.dialog.DialogManager;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
-import com.bc.appcore.jpa.model.ResultModel;
-import com.bc.appcore.table.model.SearchResultsTableModel;
 import com.bc.jpa.search.SearchResults;
 import com.bc.ui.table.cell.ColumnWidths;
 import com.bc.ui.table.cell.TableCellUIUpdater;
@@ -49,6 +48,7 @@ import com.bc.appbase.App;
 import com.bc.appbase.ui.actions.ActionListenerImpl;
 import com.bc.appbase.ui.table.cell.DefaultTableCellDisplayFormat;
 import com.bc.appbase.ui.table.cell.DefaultTableCellUIFactory;
+import com.bc.appbase.ui.table.cell.DefaultTableCellUIState;
 import com.bc.appcore.actions.Action;
 import com.bc.appcore.jpa.SelectionContext;
 import com.bc.appcore.parameter.ParametersBuilder;
@@ -57,7 +57,6 @@ import com.bc.ui.table.cell.TableCellSize;
 import com.bc.ui.table.cell.TableCellSizeImpl;
 import com.bc.ui.table.cell.TableCellUIFactory;
 import com.bc.ui.table.cell.TableCellUIState;
-import com.bc.ui.table.cell.TableCellUIStateImpl;
 import com.bc.ui.table.cell.TableCellUIUpdaterImpl;
 import java.awt.Rectangle;
 import java.util.Map;
@@ -94,7 +93,8 @@ public class UIContextBase implements UIContext {
         this.pbarFrame = new JFrame();
         this.pbarFrame.setSize(new Dimension(512, 32));
         this.pbarFrame.setPreferredSize(this.pbarPanel.getPreferredSize());
-//        this.pbarFrame.setAlwaysOnTop(true); bad bad bad
+        final boolean setAlwaysOnTopIsOk = false;
+        this.pbarFrame.setAlwaysOnTop(setAlwaysOnTopIsOk);
         this.pbarFrame.setUndecorated(true);
         this.pbarFrame.setType(Window.Type.UTILITY);
         this.pbarFrame.getContentPane().add(pbarPanel);
@@ -246,12 +246,12 @@ public class UIContextBase implements UIContext {
     public TableCellUIFactory getTableCellUIFactory(
             TableModel tableModel, Class entityType, int serialColumnIndex) {
         
-        final TableCellUIState cellUIState = new TableCellUIStateImpl();
+        final TableCellUIState cellUIState = new DefaultTableCellUIState();
         
         final TableCellDisplayFormat cellDisplayFormat = 
                 this.getTableCellDisplayFormat(serialColumnIndex);
         
-        final TableCellSize cellSize = new TableCellSizeImpl(cellDisplayFormat, 0, 100); 
+        final TableCellSize cellSize = new TableCellSizeImpl(cellDisplayFormat, 0, Integer.MAX_VALUE); 
       
         final ColumnWidths columnWidths = this.getColumnWidths();
         
@@ -291,12 +291,6 @@ public class UIContextBase implements UIContext {
     @Override
     public ColumnWidths getColumnWidths() {
         return new ColumnWidthsImpl();
-    }
-
-    @Override
-    public TableModel getTableModel(SearchResults searchResults, 
-            ResultModel resultModel, int firstPage, int numberOfPages) {
-        return new SearchResultsTableModel(searchResults, resultModel, firstPage, numberOfPages);
     }
 
     @Override

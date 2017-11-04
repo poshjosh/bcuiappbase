@@ -68,7 +68,7 @@ public class ChangeLogLevel implements Action<App, Level> {
 
                 try{
                     
-                    final String loggingConfig = app.getPropertiesPaths().getLogging().toString();
+                    final String loggingConfig = app.getPropertiesContext().getLogging().toString();
                     
                     logger.log(Level.FINE, "Logging config file: {0}", loggingConfig);
                     

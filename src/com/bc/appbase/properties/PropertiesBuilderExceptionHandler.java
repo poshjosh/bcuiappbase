@@ -21,6 +21,7 @@ import java.awt.Font;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -49,7 +50,7 @@ public class PropertiesBuilderExceptionHandler implements Consumer<Exception> {
         final int attempt = (propertiesBuilder.getValidationAttempts() + 1);
         final String prefix = "Attempt: " + attempt + " / " + propertiesBuilder.getMaxTrials() + 
                 " encountered exception: ";
-        logger.warning(() -> prefix + '\n' + e);
+        logger.log(Level.WARNING, prefix, e);
         final String userMessage = "<html>" + prefix + "<br/>" + getExceptionMessage.apply(e) + "</html>";
         final int width = userMessage.length() * 2;
         final int height = userMessage.length() * 1;

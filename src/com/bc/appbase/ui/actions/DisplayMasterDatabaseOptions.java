@@ -26,6 +26,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -37,7 +38,7 @@ public class DisplayMasterDatabaseOptions implements Action<App, Boolean> {
     public Boolean execute(App app, Map<String, Object> params) 
             throws ParameterException, TaskExecutionException {
         
-        final String [] puNames = app.getJpaContext().getMetaData().getPersistenceUnitNames();
+        final Set<String> puNames = app.getPersistenceContext().getMetaData().getPersistenceUnitNames();
 
         for(String persistenceUnitName : puNames) {
             

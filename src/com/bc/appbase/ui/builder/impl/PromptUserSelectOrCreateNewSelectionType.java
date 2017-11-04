@@ -18,7 +18,7 @@ package com.bc.appbase.ui.builder.impl;
 
 import com.bc.appbase.ui.builder.PromptUserSelectOrCreateNew;
 import com.bc.appbase.App;
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appbase.ui.VerticalLayout;
 import com.bc.appbase.ui.builder.FromUIBuilder;
 import com.bc.appbase.ui.builder.UIBuilderFromMap;
@@ -106,7 +106,8 @@ public class PromptUserSelectOrCreateNewSelectionType
             
         }else{
         
-            final List<T> found = this.getApp().getJpaContext().getBuilderForSelect(columnType).getResultsAndClose();
+            final List<T> found = this.getApp().getActivePersistenceUnitContext()
+                    .getDao().forSelect(columnType).from(columnType).getResultsAndClose();
 
             if(found == null || found.isEmpty()) {
 
@@ -236,7 +237,7 @@ public class PromptUserSelectOrCreateNewSelectionType
         
         final App app = this.getApp();
         
-        final TextSearch textSearch = app.getJpaContext().getTextSearch();
+        final TextSearch textSearch = app.getActivePersistenceUnitContext().getTextSearch();
         
         final List<T> equals = textSearch.search(valueType, value.toString(), Criteria.ComparisonOperator.EQUALS);
         

@@ -17,10 +17,10 @@
 package com.bc.appbase.ui.builder.impl;
 
 import com.bc.appbase.App;
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appbase.ui.builder.FromUIBuilder;
 import com.bc.appbase.ui.builder.PromptUserCreateNew;
-import com.bc.appbase.ui.builder.UIBuilderFromEntity;
+import com.bc.appbase.ui.builder.UIBuilderFromMap;
 import com.bc.appcore.jpa.SelectionContext;
 import com.bc.appcore.typeprovider.TypeProvider;
 import com.bc.jpa.EntityUpdater;
@@ -84,13 +84,20 @@ public class PromptUserCreateNewSelectionType implements PromptUserCreateNew {
 
         final Map structure = app.getOrException(MapBuilder.class).maxCollectionSize(0).sourceType(columnType).build();
         
-        logger.log(Level.FINER, () -> "Structure:\n" + app.getJsonFormat().toJSONString(structure));
+        logger.log(Level.FINE, () -> "Structure:\n" + app.getJsonFormat().toJSONString(structure));
         
         final JPanel creationUI = new JPanel();
         
-        final UIBuilderFromEntity uiBuilder = app.getOrException(UIBuilderFromEntity.class).sourceType(columnType);
+        final UIBuilderFromMap mapUIBuilder = app.getOrException(UIBuilderFromMap.class);
         
-        uiBuilder.build(structure, creationUI);
+        mapUIBuilder
+                .sourceType(columnType)
+                .sourceData(structure)
+                .targetUI(creationUI)
+                .selectionContext(this.getSelectionContext())
+                .typeProvider(this.getTypeProvider()) 
+                .editable(true)      
+                .build();
         
         final String columnTypeSimpleName = columnType.getSimpleName();
         
@@ -113,13 +120,13 @@ public class PromptUserCreateNewSelectionType implements PromptUserCreateNew {
         
         logger.log(Level.FINE, "Data: {0}", data);
 
-        final EntityUpdater<T, ?> updater = app.getJpaContext().getEntityUpdater(columnType);
+        final EntityUpdater<T, ?> updater = app.getActivePersistenceUnitContext().getEntityUpdater(columnType);
 
         final T columnEntity = this.newInstance(columnType);
 
         updater.update(columnEntity, data, true);
 
-        app.getDao(columnType).begin().persistAndClose(columnEntity);
+        app.getActivePersistenceUnitContext().getDao().begin().persistAndClose(columnEntity);
 
         app.getUIContext().showSuccessMessage("Successfully added "+columnTypeSimpleName);
 

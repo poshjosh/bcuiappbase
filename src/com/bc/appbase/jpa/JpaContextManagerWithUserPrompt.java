@@ -22,28 +22,27 @@ import com.bc.appbase.properties.PropertiesBuilderExceptionHandler;
 import com.bc.appbase.ui.UIContext;
 import com.bc.appcore.jpa.JpaContextManagerImpl;
 import com.bc.appcore.exceptions.UserRuntimeException;
-import com.bc.appcore.jpa.decorators.EntityManagerRetryUpdate;
-import com.bc.appcore.jpa.decorators.JpaContextWithUpdateListener;
 import com.bc.appcore.properties.PropertiesContext;
-import com.bc.jpa.JpaContext;
-import com.bc.jpa.JpaContextImpl;
+import com.bc.jpa.EntityManagerFactoryCreatorImpl;
+import com.bc.jpa.context.PersistenceContext;
+import com.bc.jpa.context.PersistenceContextEclipselinkOptimized;
 import com.bc.jpa.dom.PersistenceDOM;
 import com.bc.jpa.dom.PersistenceDOMImpl;
-import com.bc.jpa.sync.PendingUpdatesManager;
+import com.bc.jpa.functions.GetClassLoaderForPersistenceUri;
 import com.bc.jpa.sync.predicates.PersistenceCommunicationsLinkFailureTest;
+import com.bc.sql.MySQLDateTimePatterns;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
-import javax.swing.JOptionPane;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Aug 25, 2017 5:24:58 PM
@@ -58,33 +57,31 @@ public class JpaContextManagerWithUserPrompt extends JpaContextManagerImpl {
     
     private final Predicate<Throwable> communicationsFailureTest;
 
-    public JpaContextManagerWithUserPrompt(UIContext uiContext, PropertiesContext filepaths) {
-        this(uiContext, filepaths, (persistenceUnit) -> true);
-    }
+    private final Predicate<String> persistenceUnitRequiresAuthentication;
 
-    public JpaContextManagerWithUserPrompt(UIContext uiContext, PropertiesContext filepaths, Predicate<String> persistenceUnitTest) {
-        super(persistenceUnitTest);
+    private final Map<String, Properties> defaultProperties;
+        
+    public JpaContextManagerWithUserPrompt(
+            UIContext uiContext, 
+            PropertiesContext filepaths, 
+            Predicate<String> persistenceUnitRequiresAuthenticationTest) {
+        this.persistenceUnitRequiresAuthentication = 
+                Objects.requireNonNull(persistenceUnitRequiresAuthenticationTest);
         this.uiContext = uiContext;
         this.propertiesContext = Objects.requireNonNull(filepaths);
         this.communicationsFailureTest = new PersistenceCommunicationsLinkFailureTest();
+        this.defaultProperties = new HashMap();
     }
 
     @Override
-    public JpaContext createJpaContext(URI uri, int maxTrials, boolean freshInstall) 
+    public PersistenceContext createJpaContext(URI uri, int maxTrials, boolean freshInstall) 
             throws URISyntaxException {
         
         final PersistenceDOM persistenceDom = new PersistenceDOMImpl(uri);
         
-        final List<String> persistenceUnitNames = persistenceDom.getPersistenceUnitNames();
+        final PersistenceContext jpaContext = this.newJpaContext(uri);
         
-        final Map<String, Properties> defaultProperties = new HashMap(persistenceUnitNames.size(), 1.0f);
-        
-        final JpaContext jpaContext = new JpaContextImpl(uri, null){
-            @Override
-            public Properties getPersistenceUnitProperties(String persistenceUnit) {
-                return defaultProperties.get(persistenceUnit);
-            }
-        };
+        final Set<String> persistenceUnitNames = jpaContext.getMetaData(false).getPersistenceUnitNames();
         
         for(final String persistenceUnit : persistenceUnitNames) {
             
@@ -95,11 +92,10 @@ public class JpaContextManagerWithUserPrompt extends JpaContextManagerImpl {
             final Predicate<Properties> propertiesValidator = (properties) -> {
                 try{
                     
-                    defaultProperties.put(persistenceUnit, properties); 
+                    logger.finer(() -> "\n\tAdding properties for persistence unit: " + persistenceUnit + "\n"+properties);                
+                    defaultProperties.put(persistenceUnit, properties);
                     
-                    final Class aClass = jpaContext.getMetaData().getEntityClasses(persistenceUnit)[0];
-                    
-                    jpaContext.getDao(aClass).builderForSelect(aClass).count(aClass);
+                    initJpaContext(jpaContext.getContext(persistenceUnit));
                     
                     return true;
                     
@@ -122,7 +118,7 @@ public class JpaContextManagerWithUserPrompt extends JpaContextManagerImpl {
                 propertiesBuilder
                         .optionsProvider("Properties for Persistence Unit: " + persistenceUnit)
                         .sourceFile(this.getPropertiesContext(), persistenceUnit)
-                        .authenticationRequired(this.getPersistenceUnitTest().test(persistenceUnit))
+                        .authenticationRequired(this.persistenceUnitRequiresAuthentication.test(persistenceUnit))
                         .defaultValues(persistenceDom.getProperties(persistenceUnit))
                         .validator(propertiesValidator)
                         .maxTrials(maxTrials)
@@ -143,25 +139,22 @@ public class JpaContextManagerWithUserPrompt extends JpaContextManagerImpl {
         
         return jpaContext;
     }
-    
+
     @Override
-    public JpaContext configureJpaContext(JpaContext jpaContext, PendingUpdatesManager pendingUpdatesManager) {
-        
-        final Predicate<Exception> test = (exception) -> {
-            if(communicationsFailureTest.test(exception)) {
-                final int option = JOptionPane.showConfirmDialog(
-                        uiContext == null ? null : uiContext.getMainFrame(), 
-                        "Update failed! Do you want to retry the update in the background?", 
-                        "Retry Update in Background?", 
-                        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-                return option == JOptionPane.YES_OPTION;
-            }else{
-                return false;
-            }    
+    public PersistenceContext newJpaContext(URI uri) {
+        final Function<String, Properties> getProps = (persistenceUnit) -> {
+            logger.finer(() -> "\n\tFetching properties for persistence unit: " + persistenceUnit);                
+            return defaultProperties.getOrDefault(persistenceUnit, new Properties());
         };
-        
-        return new JpaContextWithUpdateListener(jpaContext, 
-                new EntityManagerRetryUpdate(pendingUpdatesManager, test));
+        final PersistenceContext jpaContext = new PersistenceContextEclipselinkOptimized(
+                uri, 
+                new EntityManagerFactoryCreatorImpl(
+                        new GetClassLoaderForPersistenceUri().apply(uri.toString()),
+                        getProps
+                ), 
+                new MySQLDateTimePatterns()
+        );
+        return jpaContext;
     }
     
     public PropertiesContext getPropertiesContext() {

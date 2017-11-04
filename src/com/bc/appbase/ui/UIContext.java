@@ -18,7 +18,6 @@ package com.bc.appbase.ui;
 
 import com.bc.appbase.ui.table.model.TableModelDisplayFormatImpl;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
-import com.bc.appcore.jpa.model.ResultModel;
 import com.bc.appcore.table.model.TableModelDisplayFormat;
 import com.bc.jpa.search.SearchResults;
 import com.bc.ui.table.cell.ColumnWidths;
@@ -75,9 +74,6 @@ public interface UIContext {
     TableCellUIUpdater getTableCellUIUpdater();
     
     ColumnWidths getColumnWidths();
-    
-    TableModel getTableModel(SearchResults searchResults, 
-            ResultModel resultModel, int firstPage, int numberOfPages);
     
     MouseListener getMouseListener(Container container);
     

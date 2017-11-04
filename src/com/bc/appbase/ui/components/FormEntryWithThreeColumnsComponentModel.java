@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.bc.appbase.ui.builder;
-
-import com.bc.appbase.ui.ComponentModel;
+package com.bc.appbase.ui.components;
 
 /**
- * @author Chinomso Bassey Ikwuagwu on Mar 26, 2017 10:55:56 PM
+ * Just a marker interface
+ * @author Chinomso Bassey Ikwuagwu on May 24, 2017 8:17:43 PM
  */
-public interface FormEntryComponentModel extends ComponentModel {
+public interface FormEntryWithThreeColumnsComponentModel extends FormEntryComponentModel{
 
 }

@@ -16,7 +16,7 @@
 
 package com.bc.appbase.properties;
 
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appbase.ui.SequentialLayout;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

@@ -17,20 +17,15 @@
 package com.bc.appbase.ui.builder;
 
 import com.bc.appbase.App;
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appcore.jpa.SelectionContext;
 import com.bc.appcore.typeprovider.MemberTypeProvider;
 import java.awt.Container;
-import java.util.Map;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on May 26, 2017 9:57:53 PM
  */
 public interface UIBuilderFromEntity extends UIBuilder<Object, Container> {
-    
-    Map buildStructure();
-    
-    void build(Map structure, Container container);
     
     UIBuilderFromEntity addOptionToViewRelated(boolean b);
     
@@ -52,7 +47,7 @@ public interface UIBuilderFromEntity extends UIBuilder<Object, Container> {
     UIBuilderFromEntity selectionContext(SelectionContext selectionContext);
     
     @Override
-    UIBuilderFromEntity entryUIProvider(ComponentModel componentModel);
+    UIBuilderFromEntity componentModel(ComponentModel componentModel);
     
     @Override
     UIBuilderFromEntity editable(Boolean editable);

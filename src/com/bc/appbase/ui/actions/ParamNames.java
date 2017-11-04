@@ -21,6 +21,8 @@ package com.bc.appbase.ui.actions;
  */
 public interface ParamNames {
     
+    String FILE_NAME = "filename";
+    
     String INTERVAL = "interval";
     
     String TIMEOUT = "timeout";

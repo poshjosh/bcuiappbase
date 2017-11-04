@@ -17,44 +17,27 @@
 package com.bc.appbase.ui.actions;
 
 
-import com.bc.appcore.actions.Action;
 import com.bc.jpa.search.SearchResults;
-import com.bc.appbase.ui.SearchResultsPanel;
-import java.awt.Container;
-import java.util.Map;
-import javax.swing.JTable;
-import com.bc.appbase.App;
-import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 22, 2017 11:59:03 AM
  */
-public class NextResult implements Action<App, JTable> {
+public class NextResult extends LoadSearchResultsPanel {
 
-    @Override
-    public JTable execute(App app, Map<String, Object> params) 
-            throws com.bc.appcore.exceptions.TaskExecutionException {
+    private static final Logger logger = Logger.getLogger(NextResult.class.getName());
 
-        final JTable table = (JTable)params.get(JTable.class.getName());
-        
-        Container parent = table.getParent();
-        while( ! (parent instanceof SearchResultsPanel) ) {
-            parent = parent.getParent();
-        }
-
-        try{
-            
-            final SearchResults searchResults = app.getUIContext().getLinkedSearchResults(table);
-
-            final int nextPage = searchResults.getPageNumber() + 1;
-
-            ((SearchResultsPanel)parent).loadSearchResultsPages(app.getUIContext(), app.getSearchContext(null), nextPage, 1);
-            
-        }catch(SearchResultsNotFoundException e) {
-            throw new TaskExecutionException(e);
-        }
-        
-        return table;
+    public NextResult() {
+        super((app, table) -> {
+            try{
+                final SearchResults searchResults = app.getUIContext().getLinkedSearchResults(table);
+                return searchResults.getPageNumber() + 1;
+            }catch(SearchResultsNotFoundException e) {
+                logger.log(Level.WARNING, "Error computing offset. Using default of 0", e);
+                return 0;
+            }    
+        });
     }
 }

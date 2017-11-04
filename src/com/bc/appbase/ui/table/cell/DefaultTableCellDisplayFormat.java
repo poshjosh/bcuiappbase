@@ -41,7 +41,7 @@ public class DefaultTableCellDisplayFormat extends TableCellDisplayFormatImpl{
     @Override
     public Object toDisplayValue(Class columnClass, Object value, int row, int column) {
         final Object output;
-        if(column == this.serialColumnIndex) {
+        if(this.isSerialDataColumn(row, column)) {
             output = value + ".";
         }else if(value != null && this.selectionContext.isSelectionType(value.getClass())) {  
             output = this.selectionContext.getSelection(value);
@@ -54,7 +54,7 @@ public class DefaultTableCellDisplayFormat extends TableCellDisplayFormatImpl{
     
     @Override
     public Object fromDisplayValue(Class columnClass, Object displayValue, int row, int column) {
-        if(column == this.serialColumnIndex) {
+        if(this.isSerialDataColumn(row, column)) {
             if(displayValue != null) {
                 final String sval = displayValue.toString();
                 displayValue = sval.substring(0, sval.length()-1);
@@ -65,5 +65,9 @@ public class DefaultTableCellDisplayFormat extends TableCellDisplayFormatImpl{
         }else{
             return super.fromDisplayValue(columnClass, displayValue, row, column);
         }
+    }
+    
+    private boolean isSerialDataColumn(int row, int column) {
+        return column == this.serialColumnIndex && row >= 0;
     }
 }

@@ -16,10 +16,32 @@
 
 package com.bc.appbase.ui.builder;
 
+import com.bc.appbase.App;
+import java.awt.Container;
+import java.util.Map;
+import java.util.Set;
+
 /**
- * Just a marker interface
- * @author Chinomso Bassey Ikwuagwu on May 24, 2017 8:17:43 PM
+ * @author Chinomso Bassey Ikwuagwu on Sep 5, 2017 8:37:19 PM
  */
-public interface FormEntryWithThreeColumnsComponentModel extends FormEntryComponentModel{
+public interface MatchEntries {
+
+    MatchEntries app(App app);
+
+    Map build();
+
+    MatchEntries dialogTitle(String dialogTitle);
+    
+    Container getUi();
+
+    boolean isBuildAttempted();
+
+    MatchEntries lhs(Set lhs);
+
+    MatchEntries noSelectionName(String noSelectionName);
+
+    MatchEntries rhs(Set rhs);
+
+    MatchEntries thirdComponentProvider(ThirdComponentProvider thirdComponentProvider);
 
 }

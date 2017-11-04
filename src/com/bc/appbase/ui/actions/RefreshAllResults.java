@@ -17,13 +17,15 @@
 package com.bc.appbase.ui.actions;
 
 import com.bc.appbase.App;
-import com.bc.appbase.ui.Components;
 import com.bc.appbase.ui.SearchResultsPanel;
+import com.bc.appbase.ui.components.ComponentWalker;
 import com.bc.appcore.actions.Action;
 import com.bc.appcore.exceptions.TaskExecutionException;
+import com.bc.appcore.parameter.ParameterExtractor;
 import java.awt.Component;
 import java.awt.Container;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -43,21 +45,22 @@ public class RefreshAllResults extends RefreshResults implements Action<App, Obj
     public Object execute(final App app, final Map<String, Object> params) 
             throws TaskExecutionException {
         
-        final List<SearchResultsPanel> list = new ArrayList(this.getSearchResultUIs(app));
+        final List<SearchResultsPanel> uiList = new ArrayList(this.getSearchResultUIs(app));
         
         final Object oval = params.get(SearchResultsPanel.class.getName());
         
         if(oval != null) {
-            list.add(0, (SearchResultsPanel)oval);
+            uiList.add(0, (SearchResultsPanel)oval);
         }
         
-        logger.log(Level.FINE, "Refreshing {0} search results UI", list.size());
+        logger.log(Level.FINE, "Refreshing {0} search results UI", uiList.size());
         
-        final Class entityType = (Class)params.get(ParamNames.ENTITY_TYPE);
+        final Set toRefresh = app.getOrException(ParameterExtractor.class)
+                .getFirstValue(params, Set.class, Collections.EMPTY_SET);
 
-        for(SearchResultsPanel ui : list) {
+        for(SearchResultsPanel ui : uiList) {
             
-            this.execute(app, ui, entityType);
+            this.execute(app, ui, toRefresh);
         }
         
         return Boolean.TRUE;
@@ -69,7 +72,7 @@ public class RefreshAllResults extends RefreshResults implements Action<App, Obj
         
         final Map<String, Object> attrs = app.getAttributes();
         
-        final Components cx = new Components();
+        final ComponentWalker cx = app.getOrException(ComponentWalker.class);
         
         final Predicate<Component> test = new Predicate<Component>() {
             @Override

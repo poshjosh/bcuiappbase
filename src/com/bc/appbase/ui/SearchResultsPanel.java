@@ -18,22 +18,20 @@ package com.bc.appbase.ui;
 
 import com.bc.appbase.ui.table.TableFormat;
 import com.bc.jpa.search.SearchResults;
-import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import com.bc.appbase.App;
 import com.bc.appcore.jpa.SearchContext;
-import com.bc.appbase.ui.actions.ActionCommands;
-import com.bc.appbase.ui.table.TableColumnManager;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
 import com.bc.appcore.jpa.LoadPageThread;
-import com.bc.appcore.jpa.model.ResultModel;
 import java.awt.Window;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.table.TableModel;
+import com.bc.appcore.jpa.model.EntityResultModel;
+import com.bc.appcore.table.model.EntityTableModelImpl;
+import com.bc.appcore.table.model.SearchResultsTableModel;
+import java.util.Collections;
 
 /**
  * @author Josh
@@ -41,50 +39,41 @@ import javax.swing.table.TableModel;
 public class SearchResultsPanel extends javax.swing.JPanel {
     
     private transient static final Logger logger = Logger.getLogger(SearchResultsPanel.class.getName());
-
-    private final TableColumnManager tableColumnManager;
     
+    private UIContext uiContext;
+    
+    private SearchContext searchContext;
+
     public SearchResultsPanel() {
         initComponents();
-        this.tableColumnManager = new TableColumnManager(this.getSearchResultsTable(), true);
     }
 
     public void init(UIContext uiContext) {
         
-        final JTable table = this.getSearchResultsTable();
+        this.uiContext = uiContext;
         
-        new TableFormat(uiContext).format(table);
+        new TableFormat(uiContext).format(searchResultsTable);
 
-        this.getNextPageButton().setActionCommand(ActionCommands.NEXT_RESULT);
-        this.getPreviousPageButton().setActionCommand(ActionCommands.PREVIOUS_RESULT);
-        this.getLastPageButton().setActionCommand(ActionCommands.LAST_RESULT);
-        this.getFirstPageButton().setActionCommand(ActionCommands.FIRST_RESULT);
-        
-        uiContext.addActionListeners(table, 
-                this.getNextPageButton(), this.getPreviousPageButton(),
-                this.getLastPageButton(), this.getFirstPageButton());
-
-        table.addMouseListener(uiContext.getMouseListener(this));
+        searchResultsPanelToolBar.init(uiContext, searchResultsTable);
     }
 
-    public void reset(App app, Class entityType) {
+    public void reset() {
         
-        final SearchResults searchResults = app.getUIContext().getLinkedSearchResults(this, null);
+        final SearchResults searchResults = uiContext.getLinkedSearchResults(this, null);
         
         if(searchResults != null) {
-            this.reset(app, app.getSearchContext(entityType), searchResults);
+            this.reset(searchResults);
         }
     }
     
-    public void reset(App app, SearchContext searchContext, SearchResults searchResults) {
+    public void reset(SearchResults searchResults) {
         
-        Objects.requireNonNull(app);
         Objects.requireNonNull(searchContext);
         Objects.requireNonNull(searchResults);
         
         final String KEY = this.getTopLevelAncestor().getName();
         
-        final SearchResults previous = (SearchResults)app.getUIContext().getLinkedSearchResults(KEY, null);
+        final SearchResults previous = (SearchResults)uiContext.getLinkedSearchResults(KEY, null);
         
         if(logger.isLoggable(Level.FINER)) {
             logger.log(Level.FINER, "Previous search results. Name: {0} ", previous);
@@ -101,12 +90,26 @@ public class SearchResultsPanel extends javax.swing.JPanel {
             }
         }
         
-        this.loadSearchResultsUI(
-                app.getUIContext(), searchContext, searchResults, KEY, 0, 1, true);
+        final int previousPageNumber = previous.getPageNumber();
+        
+        final int pageNumber;
+        if(previousPageNumber <= searchResults.getPageCount()) {
+            pageNumber = searchResults.getPageCount();
+        }else{
+            pageNumber = previousPageNumber;
+        }
+        
+        this.load(searchContext, searchResults, KEY, pageNumber, 1, true);
     }
 
-    public <T> Boolean loadSearchResultsUI(
-            UIContext uiContext, SearchContext<T> searchContext, SearchResults<T> searchResults, 
+    public <T> Boolean load(SearchContext<T> searchContext, 
+            SearchResults<T> searchResults, String ID) {
+        
+        return this.load(searchContext, searchResults, ID, 0, 1, true);
+    }
+    
+    public <T> Boolean load(
+            SearchContext<T> searchContext, SearchResults<T> searchResults, 
             String ID, int firstPage, int numberOfPages, boolean emptyResultsAllowed) {
 
         if(logger.isLoggable(Level.FINE)) {
@@ -118,20 +121,20 @@ public class SearchResultsPanel extends javax.swing.JPanel {
         if(!emptyResultsAllowed && searchResults.getSize() == 0) {
             output = Boolean.FALSE;
         }else{
-            output = this.doLoadSearchResultsUI(uiContext, searchContext, searchResults, ID, firstPage, numberOfPages, true);
+            output = this.doLoad(searchContext, searchResults, ID, firstPage, numberOfPages, true);
         }
         
         return output;
     }
-    private <T> Boolean doLoadSearchResultsUI(
-           UIContext uiContext, SearchContext<T> searchContext, SearchResults<T> searchResults, 
+    private <T> Boolean doLoad(
+           SearchContext<T> searchContext, SearchResults<T> searchResults, 
             String ID, int firstPage, int numberOfPages, boolean emptyResultsAllowed) {
         final Boolean output;
         if(!emptyResultsAllowed && searchResults.getSize() == 0) {
             output = Boolean.FALSE;
         }else{
             
-            this.loadSearchResultsPages(uiContext, searchContext, searchResults, firstPage, numberOfPages);
+            this.load(searchContext, searchResults, firstPage, numberOfPages);
             
             final Window resultsWindow = (Window)this.getTopLevelAncestor();
 
@@ -145,48 +148,73 @@ public class SearchResultsPanel extends javax.swing.JPanel {
         return output;
     }
     
-    public void loadSearchResultsPages(UIContext uiContext, SearchContext searchContext,
-            int firstPage, int numberOfPages) throws SearchResultsNotFoundException {
+    public void loadNext(int offset, int limit) throws SearchResultsNotFoundException {
 
         final SearchResults searchResults = uiContext.getLinkedSearchResults(this);
         
-        this.loadSearchResultsPages(uiContext, searchContext, searchResults, firstPage, numberOfPages);
+        this.load(searchContext, searchResults, offset, limit);
     }
     
-    private void loadSearchResultsPages(UIContext uiContext, SearchContext searchContext, 
-            SearchResults searchResults, int firstPage, int numberOfPages) {
+    private void load(SearchContext searchContext, 
+            SearchResults searchResults, int offset, int limit) {
         
-        final ResultModel resultModel = searchContext.getResultModel();
+        final EntityResultModel resultModel = searchContext.getResultModel();
+        
+        final TableModel tableModel = this.getTableModel(resultModel, searchResults, offset, limit);
+        
+        this.load(searchContext, tableModel);
+        
+        final int nextPage = offset + limit;
 
-        final JTable table = this.getSearchResultsTable();
+        if(nextPage < searchResults.getPageCount()) {
+
+            new LoadPageThread(searchResults, offset + limit).start();
+        }
         
-        if(firstPage == 0 && searchResults.getSize() == 0) {
+        final String paginationMessage = searchContext.getPaginationMessage(searchResults, limit);
+        
+        this.searchResultsPanelToolBar.getPaginationLabel().setText(paginationMessage);
+    }    
+        
+    public void load(SearchContext searchContext, TableModel tableModel) {
+        
+        final EntityResultModel resultModel = searchContext.getResultModel();
+        
+        this.searchResultsTable.setModel(tableModel);
+        
+        this.searchContext = searchContext;
+        
+        if(tableModel.getRowCount() > 0) {
             
-            final TableModel tableModel = uiContext.getTableModel(searchResults, resultModel, firstPage, 0);
+            uiContext.updateTableUI(searchResultsTable, resultModel.getEntityType(), resultModel.getSerialColumnIndex());
+        }
+    }
+    
+    private TableModel getTableModel(EntityResultModel resultModel, 
+            SearchResults searchResults, int offset, int limit) {
+        
+        final TableModel tableModel;
+        
+        if(offset == 0 && searchResults.getSize() == 0) {
             
-            table.setModel(tableModel);
+            tableModel = new SearchResultsTableModel(searchResults, resultModel, offset, 0);
             
         }else{
             
-            if(firstPage < 0 || firstPage >= searchResults.getPageCount()) {
-                return;
+            if(offset < 0 || offset >= searchResults.getPageCount()) {
+                
+                tableModel = new EntityTableModelImpl(Collections.EMPTY_LIST, resultModel);
+                
+            }else{
+
+                logger.log(Level.FINE, "Setting page number to: {0}", offset);
+                searchResults.setPageNumber(offset);
+
+                tableModel = new SearchResultsTableModel(searchResults, resultModel, offset, limit);
             }
-
-            logger.log(Level.FINE, "Setting page number to: {0}", firstPage);
-            searchResults.setPageNumber(firstPage);
-
-            final TableModel tableModel = uiContext.getTableModel(searchResults, resultModel, firstPage, numberOfPages);
-
-            table.setModel(tableModel);
-            
-            uiContext.updateTableUI(table, resultModel.getEntityType(), resultModel.getSerialColumnIndex());
-            
-            new LoadPageThread(searchResults, firstPage + numberOfPages).start();
         }
 
-        final String paginationMessage = searchContext.getPaginationMessage(searchResults, numberOfPages, true, false);
-        
-        this.getPaginationLabel().setText(paginationMessage);
+        return tableModel;
     }
     
     /**
@@ -200,12 +228,7 @@ public class SearchResultsPanel extends javax.swing.JPanel {
 
         scrollPane = new javax.swing.JScrollPane();
         searchResultsTable = new javax.swing.JTable();
-        previousPageButton = new javax.swing.JButton();
-        nextPageButton = new javax.swing.JButton();
-        paginationLabel = new javax.swing.JLabel();
-        firstPageButton = new javax.swing.JButton();
-        lastPageButton = new javax.swing.JButton();
-        addButton = new javax.swing.JButton();
+        searchResultsPanelToolBar = new com.bc.appbase.ui.SearchResultsPanelToolBar();
 
         setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
         setPreferredSize(new java.awt.Dimension(570, 550));
@@ -228,75 +251,31 @@ public class SearchResultsPanel extends javax.swing.JPanel {
         searchResultsTable.setPreferredSize(new java.awt.Dimension(580, 520));
         scrollPane.setViewportView(searchResultsTable);
 
-        previousPageButton.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
-        previousPageButton.setText("<");
-
-        nextPageButton.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
-        nextPageButton.setText(">");
-
-        paginationLabel.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
-        paginationLabel.setPreferredSize(new java.awt.Dimension(186, 31));
-
-        firstPageButton.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
-        firstPageButton.setText("<<");
-
-        lastPageButton.setFont(new java.awt.Font("Tahoma", 1, 18)); // NOI18N
-        lastPageButton.setText(">>");
-
-        addButton.setFont(new java.awt.Font("Tahoma", 0, 18)); // NOI18N
-        addButton.setText("Add");
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(scrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 550, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(addButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(firstPageButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(previousPageButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(paginationLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(nextPageButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(lastPageButton)))
+                .addComponent(scrollPane, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                 .addContainerGap())
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(searchResultsPanelToolBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(nextPageButton)
-                            .addComponent(lastPageButton))
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(previousPageButton)
-                            .addComponent(firstPageButton)
-                            .addComponent(addButton)))
-                    .addComponent(paginationLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(searchResultsPanelToolBar, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(scrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 491, Short.MAX_VALUE)
-                .addContainerGap())
+                .addComponent(scrollPane, javax.swing.GroupLayout.DEFAULT_SIZE, 513, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton addButton;
-    private javax.swing.JButton firstPageButton;
-    private javax.swing.JButton lastPageButton;
-    private javax.swing.JButton nextPageButton;
-    private javax.swing.JLabel paginationLabel;
-    private javax.swing.JButton previousPageButton;
     private javax.swing.JScrollPane scrollPane;
+    private com.bc.appbase.ui.SearchResultsPanelToolBar searchResultsPanelToolBar;
     private javax.swing.JTable searchResultsTable;
     // End of variables declaration//GEN-END:variables
 
@@ -308,31 +287,15 @@ public class SearchResultsPanel extends javax.swing.JPanel {
         return searchResultsTable;
     }
 
-    public JButton getNextPageButton() {
-        return nextPageButton;
+    public SearchContext getSearchContext() {
+        return searchContext;
     }
 
-    public JLabel getPaginationLabel() {
-        return paginationLabel;
+    public UIContext getUiContext() {
+        return uiContext;
     }
 
-    public JButton getPreviousPageButton() {
-        return previousPageButton;
-    }
-
-    public JButton getFirstPageButton() {
-        return firstPageButton;
-    }
-
-    public JButton getLastPageButton() {
-        return lastPageButton;
-    }
-
-    public JButton getAddButton() {
-        return addButton;
-    }
-
-    public TableColumnManager getTableColumnManager() {
-        return tableColumnManager;
+    public SearchResultsPanelToolBar getSearchResultsPanelToolBar() {
+        return searchResultsPanelToolBar;
     }
 }

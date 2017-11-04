@@ -34,9 +34,7 @@ import com.bc.appcore.table.model.XYCountTableModelBuilderImpl;
 import com.bc.appcore.actions.Action;
 import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.exceptions.ObjectFactoryException;
-import com.bc.appcore.jpa.model.ResultModel;
 import com.bc.appcore.parameter.ParameterException;
-import com.bc.appcore.predicates.AcceptAll;
 import com.bc.jpa.search.SearchResults;
 import java.awt.Container;
 import java.awt.HeadlessException;
@@ -55,6 +53,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.table.TableModel;
+import com.bc.appcore.jpa.model.EntityResultModel;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on May 20, 2017 11:41:33 AM
@@ -71,7 +70,7 @@ public class ViewSummaryReport implements Action<App, TableModel> {
             
             final UIContext uiContext = app.getUIContext();
             
-            final ResultModel resultModel = this.getResultModel(app, params);
+            final EntityResultModel resultModel = this.getResultModel(app, params);
             
             final SearchResults searchResults = this.getSearchResults(app, params, resultModel.getEntityType());
             
@@ -105,7 +104,7 @@ public class ViewSummaryReport implements Action<App, TableModel> {
                     .yEntityType(yEntityType)
                     .useCache(useCache)
                     .build();
-
+            
             final JTable table = new JTable(tableModel);
             
             table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -144,9 +143,11 @@ public class ViewSummaryReport implements Action<App, TableModel> {
                 
                 final boolean collapse = COLLAPSE.equals(collapseMenuItem.getText());
                 
-                final Predicate<Integer> rowTest = !collapse ? new AcceptAll() :
+                final Predicate<Integer> acceptAll = (val) -> true;
+                
+                final Predicate<Integer> rowTest = !collapse ? acceptAll :
                         new XYCountTableEmptyRowFilter(tableModel);
-                final Predicate<Integer> colTest = !collapse ? new AcceptAll() :
+                final Predicate<Integer> colTest = !collapse ? acceptAll :
                         new XYCountTableEmptyColumnFilter(tableModel);
                 
                 try{
@@ -191,6 +192,8 @@ public class ViewSummaryReport implements Action<App, TableModel> {
 
             frame.setVisible(true);
             
+            collapseMenuItem.doClick();
+            
             return tableModel;
             
         }catch(HeadlessException | ObjectFactoryException e) {
@@ -198,13 +201,13 @@ public class ViewSummaryReport implements Action<App, TableModel> {
         }
     }
     
-    public ResultModel getResultModel(App app, Map<String, Object> params) {
-        final ResultModel output;
-        final ResultModel param = (ResultModel)params.get(ParamNames.RESULT_MODEL);
+    public EntityResultModel getResultModel(App app, Map<String, Object> params) {
+        final EntityResultModel output;
+        final EntityResultModel param = (EntityResultModel)params.get(ParamNames.RESULT_MODEL);
         if(param != null) {
             output = param;
         }else{
-            output = app.getResultModel((Class)app.getAttributes().get(ParamNames.ENTITY_TYPE), null);
+            output = app.getResultModel((Class)params.get(ParamNames.ENTITY_TYPE), null);
         }
         Objects.requireNonNull(output);
         return output;
@@ -216,7 +219,7 @@ public class ViewSummaryReport implements Action<App, TableModel> {
         if(param != null) {
             output = param;
         }else{
-            output = app.getSearchContext(entityType).getSearchResults();
+            output = app.getSearchContext(entityType).searchAll();
         }
         Objects.requireNonNull(output);
         return output;

@@ -15,8 +15,9 @@
  */
 package com.bc.appbase.ui.builder.impl;
 
-import com.bc.appbase.ui.ComponentModel;
-import com.bc.appbase.ui.ComponentModelImpl;
+import com.bc.appbase.ui.components.FormEntryComponentModelImpl;
+import com.bc.appbase.ui.components.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModelImpl;
 import com.bc.appbase.ui.DateFromUIBuilderImpl;
 import com.bc.appbase.ui.DateUIUpdaterImpl;
 import com.bc.appcore.jpa.SelectionContext;
@@ -97,7 +98,7 @@ public class UIFromMapBuilderTest {
                 .selectionContext(SelectionContext.NO_OP)
                 .sourceData(source)
                 .typeProvider(typeProvider)
-                .entryUIProvider(new FormEntryComponentModelImpl(cm))
+                .componentModel(new FormEntryComponentModelImpl(cm))
                 .build();
         
         final int selection = JOptionPane.showConfirmDialog(

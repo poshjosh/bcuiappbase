@@ -46,7 +46,9 @@ public class PromptSelectEntityType implements Action<App, Class> {
         
         final Set<Class> classSet = this.getOptions(app, params);
         
-        final Predicate<Class> filter = app.getOrException(ParameterExtractor.class)
+        final ParameterExtractor parameterExtractor = app.getOrException(ParameterExtractor.class);
+        
+        final Predicate<Class> filter = parameterExtractor
                 .getFirstValue(params, Predicate.class, (cls) -> true);
         
         return this.execute(app, classSet, filter);
@@ -98,13 +100,15 @@ public class PromptSelectEntityType implements Action<App, Class> {
         final Collection<Class> optionsParam = (Collection<Class>)params.get(ParamNames.ENTITY_TYPE+"List");
         if(optionsParam == null) {
             
-            final Set<String> puNames = app.getPersistenceUnitNames();
-            output = app.getJpaContext().getMetaData().getEntityClasses(puNames);
+            output = app.getActivePersistenceUnitContext().getMetaData().getEntityClasses();
             
             logger.log(Level.FINER, "All classes: {0}", output);
+            
         }else{
+            
             output = optionsParam instanceof Set ?
                     (Set<Class>)optionsParam : new LinkedHashSet(optionsParam);
+            
             logger.log(Level.FINER, "Seed classes: {0}", output);
         }
         return output;

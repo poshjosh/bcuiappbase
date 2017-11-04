@@ -17,10 +17,10 @@
 package com.bc.appbase.ui.actions;
 
 import com.bc.appbase.App;
-import com.bc.appbase.ui.ComponentModel.ComponentProperties;
-import com.bc.appbase.ui.ComponentModelWithTableAsEntityListUI;
-import com.bc.appbase.ui.builder.FormEntryComponentModel;
 import com.bc.appbase.ui.builder.UIBuilderFromMap;
+import com.bc.appbase.ui.components.ComponentModel.ComponentProperties;
+import com.bc.appbase.ui.components.ComponentModelWithTableAsEntityListUI;
+import com.bc.appbase.ui.components.FormEntryComponentModel;
 import com.bc.appbase.ui.builder.impl.SettingsFormEntryComponentModel;
 import com.bc.appcore.actions.Action;
 import com.bc.appcore.util.Settings;
@@ -77,7 +77,7 @@ public class DisplaySettingsUI implements Action<App, Boolean> {
         
         final Container ui = (Container)app.getOrException(UIBuilderFromMap.class)
                 .sourceData(sourceData)
-                .entryUIProvider(formEntryComponentModel)
+                .componentModel(formEntryComponentModel)
                 .typeProvider(new SettingsTypeProvider(settings))
                 .build();
         

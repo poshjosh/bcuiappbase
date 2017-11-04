@@ -17,43 +17,26 @@
 package com.bc.appbase.ui.actions;
 
 
-import com.bc.appcore.actions.Action;
 import com.bc.jpa.search.SearchResults;
-import com.bc.appbase.ui.SearchResultsPanel;
-import java.awt.Container;
-import java.util.Map;
-import javax.swing.JTable;
-import com.bc.appbase.App;
-import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
+import java.util.logging.Level;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 24, 2017 8:32:22 AM
  */
-public class LastResult implements Action<App, JTable> {
+public class LastResult extends LoadSearchResultsPanel {
 
-    @Override
-    public JTable execute(App app, Map<String, Object> params) throws TaskExecutionException {
+    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(LastResult.class.getName());
 
-        final JTable table = (JTable)params.get(JTable.class.getName());
-        
-        Container parent = table.getParent();
-        while( ! (parent instanceof SearchResultsPanel) ) {
-            parent = parent.getParent();
-        }
-        
-        try{
-            
-            final SearchResults searchResults = app.getUIContext().getLinkedSearchResults(table);
-
-            final int lastPage = searchResults.getPageCount() - 1;
-
-            ((SearchResultsPanel)parent).loadSearchResultsPages(app.getUIContext(), app.getSearchContext(null), lastPage, 1);
-            
-        }catch(SearchResultsNotFoundException e) {
-            throw new TaskExecutionException(e);
-        }
-        
-        return table;
+    public LastResult() {
+        super((app, table) -> {
+            try{
+                final SearchResults searchResults = app.getUIContext().getLinkedSearchResults(table);
+                return searchResults.getPageCount() - 1;
+            }catch(SearchResultsNotFoundException e) {
+                logger.log(Level.WARNING, "Error computing offset. Using default of 0", e);
+                return 0;
+            }    
+        });
     }
 }

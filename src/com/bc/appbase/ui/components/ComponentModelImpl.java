@@ -14,35 +14,38 @@
  * limitations under the License.
  */
 
-package com.bc.appbase.ui;
+package com.bc.appbase.ui.components;
 
+import com.bc.appbase.ui.DateFromUIBuilder;
+import com.bc.appbase.ui.DatePanel;
+import com.bc.appbase.ui.DateUIUpdater;
+import com.bc.appbase.ui.JCheckBoxMenuItemListComboBox;
 import com.bc.appcore.ObjectFactory;
 import com.bc.appcore.util.Selection;
 import com.bc.appcore.jpa.SelectionContext;
 import com.bc.appcore.util.SelectionValues;
+import com.bc.ui.table.cell.TableCellComponentModelImpl;
 import com.bc.ui.table.cell.TableCellTextArea;
 import java.awt.Component;
-import java.awt.Container;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.ItemSelectable;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.AbstractButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JFormattedTextField;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.text.JTextComponent;
@@ -50,7 +53,7 @@ import javax.swing.text.JTextComponent;
 /**
  * @author Chinomso Bassey Ikwuagwu on Apr 6, 2017 11:05:40 AM
  */
-public class ComponentModelImpl implements ComponentModel {
+public class ComponentModelImpl extends TableCellComponentModelImpl implements ComponentModel {
 
     private static final Logger logger = Logger.getLogger(ComponentModelImpl.class.getName());
     
@@ -111,7 +114,10 @@ public class ComponentModelImpl implements ComponentModel {
     }
     
     protected Component doGetComponent(Class parentType, Class valueType, String name, Object value) {
-//System.out.println("doGetComponent(..) "+valueType.getSimpleName()+' '+name+'='+value+". @"+this.getClass());                        
+        
+        logger.finer(() -> "doGetComponent(..) For type: " + (parentType==null?null:parentType.getName()) 
+                + ", " + (valueType==null?"NULL":valueType.getSimpleName()) + ' ' + name + '=' + value);                        
+
         final Component component;
         
         List<Selection> selectionList;
@@ -126,10 +132,8 @@ public class ComponentModelImpl implements ComponentModel {
             
         }else if( ! (selectionList = this.getSelectionValues(parentType, valueType, name, value)).isEmpty()) {
             
-            if(logger.isLoggable(Level.FINER)) {
-                logger.log(Level.FINER, "Value type: {0}, {1}={2}\nSelection values: {3}", 
-                        new Object[]{valueType.getName(), name, value, selectionList});
-            }
+            logger.finer(() -> MessageFormat.format("{0} {1} = {2};\nSelection values: {3}", 
+                    (valueType==null?"NULL":valueType.getSimpleName()), name, value, selectionList));
             
             component = this.getSelectionComponent(valueType, name, value, selectionList);
             
@@ -137,20 +141,28 @@ public class ComponentModelImpl implements ComponentModel {
             
             component = this.getPasswordComponent(valueType, name, value);
             
-        }else{
+        }else if(String.class.isAssignableFrom(valueType)) {    
             
             component = this.getTextComponent(valueType, name, value);
+            
+        }else{
+            
+            component = this.getFormattedTextComponent(valueType, name, value);
         }
         
         final ComponentProperties props = this.getComponentProperties();
         component.setFont(props.getFont(component));
         
         if(props.getWidth(component) > 0) {
-            component.setPreferredSize(new Dimension(props.getWidth(component), props.getHeight(component)));
+            component.setPreferredSize(props.getDimension(component));
         }
         
         component.setEnabled(props.isEnabled(component));
 
+        logger.fine(() -> "doGetComponent(..) Component: " + component.getClass().getName()+ 
+                ", For type: " + (parentType==null?null:parentType.getName()) + 
+                ", " + (valueType==null?"NULL":valueType.getSimpleName()) + ' ' + name + '=' + value); 
+        
         return component;
     }
     
@@ -169,20 +181,18 @@ public class ComponentModelImpl implements ComponentModel {
     @Override
     public Object getValue(Component component, Object outputIfNone) {
         
+        if(component instanceof JScrollPane) {
+            component = ((JScrollPane)component).getViewport().getView();
+        }
+        
         Objects.requireNonNull(component);
         
         Object value;
         
-        if(component instanceof JPasswordField) {
-            value = ((JPasswordField)component).getPassword();
-        }else if(component instanceof JTextComponent) {
-            value = ((JTextComponent)component).getText();
-        }else if(component instanceof AbstractButton) {
-            value = ((AbstractButton)component).isSelected();
-        }else if(component instanceof DatePanel) {
+        if(component instanceof DatePanel) {
             value = dateFromUIBuilder.ui(component).build(null);
-        }else if(component instanceof ItemSelectable) {
-            final Object [] selected = ((ItemSelectable)component).getSelectedObjects();
+        }else if(component instanceof JComboBox) {
+            final Object [] selected = ((JComboBox)component).getSelectedObjects();
             value = selected == null ? null : this.getValue(Arrays.asList(selected));
         }else if(component instanceof JList) {
             final List selected = ((JList)component).getSelectedValuesList();
@@ -191,23 +201,9 @@ public class ComponentModelImpl implements ComponentModel {
             final JCheckBoxMenuItemListComboBox comboBox = (JCheckBoxMenuItemListComboBox)component;
             final List selected = comboBox.getSelectedValuesList();
             value = this.getValue(selected);
-        }else if(component instanceof Container) {
-            
-            final Container container = (Container)component;
-            final int count = container.getComponentCount();
-            final Map map = new LinkedHashMap(count * 2, 0.75f);
-            for(int i=0; i<count; i++) {
-                final Component c = container.getComponent(i);
-                if(c.getName() != null) {
-                    map.put(c.getName(), this.getValue(c, null));
-                }
-            }
-            
-            value = map;
-            
         }else{
             
-            value = outputIfNone;
+            value = super.getValue(component, outputIfNone);
         }
         
         value = this.format(value);
@@ -254,21 +250,15 @@ public class ComponentModelImpl implements ComponentModel {
     @Override
     public Object setValue(Component component, Object value) {
         
+        if(component instanceof JScrollPane) {
+            component = ((JScrollPane)component).getViewport().getView();
+        }
+        
         Objects.requireNonNull(component);
         
         value = this.format(value);
         
-        if(component instanceof JPasswordField) {
-            if(value instanceof char[]) {
-                ((JPasswordField)component).setText(new String((char[])value));
-            }else{
-                ((JPasswordField)component).setText(value==null?null:value.toString());
-            }
-        }else if(component instanceof JTextComponent) {
-            ((JTextComponent)component).setText(value==null?null:String.valueOf(value));
-        }else if(component instanceof AbstractButton) {
-            ((AbstractButton)component).setSelected(Boolean.valueOf(String.valueOf(value)));
-        }else if(component instanceof DatePanel) {
+        if(component instanceof DatePanel) {
             final DatePanel dateTimePanel = (DatePanel)component;
             final Calendar cal = Calendar.getInstance();
             if(value != null) {
@@ -287,21 +277,14 @@ public class ComponentModelImpl implements ComponentModel {
             final JCheckBoxMenuItemListComboBox jx = (JCheckBoxMenuItemListComboBox)component;
             jx.setSelectedValue(Selection.from(component.getName(), value));
         }else{
-            throw new UnsupportedOperationException("Unsupported UI component type: "+component.getClass().getName());
+            value = super.setValue(component, value);
         }
+        
         return value;
     }
     
-    public Object format(Object value) {
-        if(value instanceof String) {
-            final String sval = (String)value;
-            value = sval.isEmpty() ? null : sval;
-        }
-        return value;
-    }
-     
     public Component getBooleanComponent(Class valueType, String name, Object value) {
-        final JCheckBox component = new JCheckBox(valueType.getSimpleName());
+        final JCheckBox component = new JCheckBox(name);
         return component;
     }
     
@@ -328,6 +311,15 @@ public class ComponentModelImpl implements ComponentModel {
     
     public Component getPasswordComponent(Class valueType, String name, Object value) {
         final JPasswordField component = new JPasswordField();
+        return component;
+    }
+    
+    public Component getFormattedTextComponent(Class valueType, String name, Object value) {
+        
+        final JTextComponent component = new JFormattedTextField();
+        
+        component.setEditable(this.componentProperties.isEditable(component));
+//System.out.println("Editable: "+component.isEditable()+", component: "+component.getClass().getName()+". @"+this.getClass());                                        
         return component;
     }
     

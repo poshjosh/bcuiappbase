@@ -21,11 +21,9 @@ import com.bc.appcore.actions.Action;
 import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.parameter.ParameterException;
 import com.bc.jpa.dao.Dao;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 
@@ -33,6 +31,8 @@ import javax.swing.JOptionPane;
  * @author Chinomso Bassey Ikwuagwu on Apr 1, 2017 3:37:57 PM
  */
 public class DeleteSelectedRecords implements Action<App, Boolean> {
+
+    private static final Logger logger = Logger.getLogger(DeleteSelectedRecords.class.getName());
 
     @Override
     public Boolean execute(App app, Map<String, Object> params) 
@@ -43,7 +43,7 @@ public class DeleteSelectedRecords implements Action<App, Boolean> {
         final Class entityType = (Class)params.get(ParamNames.ENTITY_TYPE);
         Objects.requireNonNull(entityType);
 
-        final String idColumnName = app.getJpaContext().getMetaData().getIdColumnName(entityType);
+        final String idColumnName = app.getActivePersistenceUnitContext().getMetaData().getIdColumnName(entityType);
         final List idsList = (List)params.get(idColumnName+"List");
         
         if(idsList == null || idsList.isEmpty()) {
@@ -61,22 +61,23 @@ public class DeleteSelectedRecords implements Action<App, Boolean> {
             if(selection == JOptionPane.YES_OPTION) {
 
                 for(Object id : idsList) {
+                    
+                    logger.fine(() -> "Deleting: entity with ID: " + id + ", of type: " + entityType.getName());
 
-                    try(Dao dao = app.getDao(entityType)) {
+                    try(Dao dao = app.getActivePersistenceUnitContext().getDao()) {
 
                         final Object managedEntity = dao.find(entityType, id);
+                        Objects.requireNonNull(managedEntity);
+                        
+                        logger.fine(() -> "Deleting: managed entity: " + managedEntity);
 
                         dao.begin().remove(managedEntity).commit();
                     }
                 }
 
                 app.getUIContext().showSuccessMessage("Success");
-
-                try{
-                    app.getAction(ActionCommands.REFRESH_ALL_RESULTS).execute(app, Collections.EMPTY_MAP);
-                }catch(ParameterException | TaskExecutionException e) {
-                    Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Unexpected exception", e);
-                }
+                
+                app.getAction(ActionCommands.REFRESH_ALL_RESULTS).executeSilently(app);
 
                 output = Boolean.TRUE;
 

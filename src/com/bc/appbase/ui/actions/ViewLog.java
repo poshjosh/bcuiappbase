@@ -59,7 +59,7 @@ public class ViewLog implements Action<App, Boolean> {
             
             final int maxLen = 10_000;
 
-            final String logCfgFile = app.getPropertiesPaths().getLogging().toString();
+            final String logCfgFile = app.getPropertiesContext().getLogging().toString();
             
             logger.log(Level.FINER, "Logging config file: {0}", logCfgFile);
             

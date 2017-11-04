@@ -19,16 +19,20 @@ package com.bc.appbase.ui.actions;
 
 import com.bc.appbase.ui.SearchResultsPanel;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import com.bc.appcore.actions.Action;
 import com.bc.appbase.App;
 import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
-import com.bc.appcore.jpa.SearchContext;
+import com.bc.appcore.parameter.ParameterException;
+import com.bc.appcore.parameter.ParameterExtractor;
+import com.bc.jpa.EntityUpdater;
 import com.bc.jpa.search.SearchResults;
 import java.awt.Container;
-import java.util.Objects;
+import java.util.Collections;
+import java.util.Set;
+import java.util.logging.Level;
+import javax.persistence.Cache;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 11, 2017 1:44:57 AM
@@ -39,21 +43,18 @@ public class RefreshResults implements Action<App, Object> {
     
     @Override
     public Object execute(final App app, final Map<String, Object> params) 
-            throws TaskExecutionException {
-        
-        final SearchResultsPanel resultsPanel = (SearchResultsPanel)params.get(SearchResultsPanel.class.getName());
-        Objects.requireNonNull(resultsPanel);
-        final Class entityType = (Class)params.get(ParamNames.ENTITY_TYPE);
-                    
-        this.execute(app, resultsPanel, entityType);
+            throws ParameterException, TaskExecutionException {
+        final ParameterExtractor paramExtractor =  app.getOrException(ParameterExtractor.class);
+        final SearchResultsPanel resultsPanel = paramExtractor.getFirstValue(params, SearchResultsPanel.class);
+        final Set toRefresh = paramExtractor.getFirstValue(params, Set.class, Collections.EMPTY_SET);
+       
+        this.execute(app, resultsPanel, toRefresh);
         
         return Boolean.TRUE;
     }
     
-    public void execute(App app, SearchResultsPanel resultsPanel, Class entityType) 
+    public void execute(App app, SearchResultsPanel resultsPanel, Set updatesToRefresh) 
             throws TaskExecutionException {
-
-        final SearchContext searchContext = app.getSearchContext(entityType);
         
         final SearchResults searchResults;
         try{
@@ -61,20 +62,43 @@ public class RefreshResults implements Action<App, Object> {
         }catch(SearchResultsNotFoundException e) {
             throw new TaskExecutionException(e);
         }
+
+        this.execute(app, resultsPanel, searchResults, updatesToRefresh);
+    }    
         
-        this.execute(app, resultsPanel, searchContext, searchResults);
-    }
-    
     public void execute(App app, SearchResultsPanel resultsPanel, 
-            SearchContext searchContext, SearchResults searchResults) {
+            SearchResults searchResults, Set updatesToRefresh) 
+            throws TaskExecutionException {
         
-        app.getJpaContext().getEntityManagerFactory(searchContext.getResultType()).getCache().evictAll();
+        final Class resultType = resultsPanel.getSearchContext().getResultType();
+        
+        final Cache cache = app.getActivePersistenceUnitContext().getEntityManagerFactory().getCache();
+        
+        if(!updatesToRefresh.isEmpty()) {
+        
+            final EntityUpdater updater = app.getActivePersistenceUnitContext().getEntityUpdater(resultType);
+            
+            for(Object toRefresh : updatesToRefresh) {
+
+                searchResults.load(toRefresh);
+
+                final Object id = updater.getId(toRefresh);
+                
+                if(id != null) {
+                    
+                    cache.evict(toRefresh.getClass(), id);
+                }
+            }
+        }else{
+            
+            cache.evict(resultType);
+        }
         
         final Container c = resultsPanel.getTopLevelAncestor();
 
         logger.log(Level.FINER, "Refreshing window named: {0}", c == null ? null : c.getName());
         
-        resultsPanel.reset(app, searchContext, searchResults);
+        resultsPanel.reset(searchResults);
     }
 }
 

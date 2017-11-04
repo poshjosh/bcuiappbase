@@ -16,13 +16,14 @@
 
 package com.bc.appbase.properties;
 
-import com.bc.appbase.ui.ComponentModel;
-import com.bc.appbase.ui.ComponentModelImpl;
-import com.bc.appbase.ui.Components;
+import com.bc.appbase.ui.components.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModelImpl;
+import com.bc.appbase.ui.components.ComponentWalkerImpl;
 import com.bc.appbase.ui.DateFromUIBuilderImpl;
 import com.bc.appbase.ui.DateUIUpdaterImpl;
 import com.bc.appbase.ui.SequentialLayout;
 import com.bc.appbase.ui.VerticalLayout;
+import com.bc.appbase.ui.components.ComponentWalker;
 import com.bc.appcore.jpa.SelectionContext;
 import java.awt.Component;
 import java.awt.Container;
@@ -122,11 +123,11 @@ public class GetOptionsViaUserPrompt implements OptionsProvider {
             output.putAll(params);
         }else{
         
-            final Components cx = new Components();
+            final ComponentWalker componentWalker = new ComponentWalkerImpl();
 
             for(String name : params.keySet()) {
 
-                final Component found = cx.findFirstChild(ui, (c) -> name.equals(c.getName()), false, null);
+                final Component found = componentWalker.findFirstChild(ui, (c) -> name.equals(c.getName()), false, null);
 
                 if(found != null) {
 

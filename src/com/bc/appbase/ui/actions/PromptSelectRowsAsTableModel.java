@@ -23,7 +23,6 @@ import com.bc.appcore.table.model.TableModelFromView;
 import com.bc.appcore.actions.Action;
 import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
-import com.bc.appcore.jpa.model.ResultModel;
 import com.bc.appcore.parameter.ParameterException;
 import com.bc.jpa.search.SearchResults;
 import java.util.Arrays;
@@ -32,6 +31,7 @@ import java.util.Objects;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.table.TableModel;
+import com.bc.appcore.jpa.model.EntityResultModel;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Jun 22, 2017 3:41:43 PM
@@ -72,7 +72,7 @@ public class PromptSelectRowsAsTableModel implements Action<App, TableModel>{
 
                 try{
                     
-                    ResultModel resultModel = (ResultModel)params.get(ResultModel.class.getName());
+                    EntityResultModel resultModel = (EntityResultModel)params.get(EntityResultModel.class.getName());
                     if(resultModel == null) {
                         final Class resultType = (Class)params.get(ParamNames.ENTITY_TYPE);
                         resultModel = app.getResultModel(resultType, null);

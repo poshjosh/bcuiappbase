@@ -22,9 +22,8 @@ import com.bc.appcore.actions.Action;
 import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.parameter.ParameterException;
 import com.bc.appcore.util.RelationAccess;
-import com.bc.jpa.EntityController;
 import com.bc.jpa.EntityUpdater;
-import com.bc.jpa.JpaContext;
+import com.bc.jpa.context.PersistenceUnitContext;
 import com.bc.jpa.dao.Dao;
 import com.bc.util.JsonFormat;
 import com.bc.util.MapBuilder;
@@ -34,6 +33,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
+import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import static jxl.biff.FormatRecord.logger;
 
 /**
@@ -61,9 +62,9 @@ public class UpdateDatabaseWithEntities implements Action<App, Collection> {
       
         relationAccess.update(entities, false);
         
-        final JpaContext jpaContext = app.getJpaContext();
+        final PersistenceUnitContext jpaContext = app.getActivePersistenceUnitContext();
         
-        try(Dao dao = jpaContext.getDao(entities.get(0).getClass())) {
+        try(Dao dao = jpaContext.getDao()) {
         
             dao.begin();
             
@@ -99,20 +100,17 @@ public class UpdateDatabaseWithEntities implements Action<App, Collection> {
         return entities;
     }
     
-    public void edit(JpaContext jpaContext, Object entity) {
-        final EntityController ec = jpaContext.getEntityController(entity.getClass());
-        try{
-            ec.edit(entity);
-        }catch(Exception e) {
-            throw new RuntimeException("Error editing entity: "+entity, e);
-        }
+    public void edit(PersistenceUnitContext puContext, Object entity) {
+        puContext.getDao().begin().mergeAndClose(entity);
+//        final EntityManager em = puContext.getEntityManager();
+//        this.edit(em, entity);
     }
     
-    public Object find(JpaContext jpaContext, Dao dao, Object entity, Object outputIfNone) {
+    public Object find(PersistenceUnitContext puContext, Dao dao, Object entity, Object outputIfNone) {
         
         final Class entityType = entity.getClass();
 
-        final EntityUpdater updater = jpaContext.getEntityUpdater(entityType);
+        final EntityUpdater updater = puContext.getEntityUpdater(entityType);
 
         final Object id = updater.getId(entity);
         
@@ -128,5 +126,24 @@ public class UpdateDatabaseWithEntities implements Action<App, Collection> {
         }
 
         return found == null ? outputIfNone : found;
+    }
+
+    private void edit(EntityManager em, Object entity) {
+        try {
+            EntityTransaction t = em.getTransaction();
+            try{
+                t.begin();
+                entity = em.merge(entity); 
+                t.commit();
+            }finally{
+                if(t.isActive()) {
+                    t.rollback();
+                }
+            }
+        } finally {
+            if (em != null) {
+                em.close();
+            }
+        }
     }
 }

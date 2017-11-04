@@ -17,9 +17,9 @@
 package com.bc.appbase.ui.actions;
 
 import com.bc.appbase.App;
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appbase.ui.UIDisplayHandler;
-import com.bc.appbase.ui.builder.FormEntryComponentModel;
+import com.bc.appbase.ui.components.FormEntryComponentModel;
 import com.bc.appbase.ui.builder.UIBuilderFromEntity;
 import com.bc.appcore.actions.Action;
 import java.awt.Container;
@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import com.bc.appbase.ui.builder.FormEntryWithThreeColumnsComponentModel;
+import com.bc.appbase.ui.components.FormEntryWithThreeColumnsComponentModel;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Jun 17, 2017 12:14:44 PM
@@ -42,7 +42,8 @@ public class DisplaySelectedEntitiesUIs implements Action<App, Container> {
     public Container execute(App app, Map<String, Object> params) {
         
         final Class selectedEntityType = (Class)params.get(ParamNames.ENTITY_TYPE);
-        final String idColumnName = app.getJpaContext().getMetaData().getIdColumnName(selectedEntityType);
+        Objects.requireNonNull(selectedEntityType);
+        final String idColumnName = app.getActivePersistenceUnitContext().getMetaData().getIdColumnName(selectedEntityType);
         final List idsList = (List)params.get(idColumnName+"List");
         
         if(logger.isLoggable(Level.FINE)) {
@@ -78,7 +79,7 @@ public class DisplaySelectedEntitiesUIs implements Action<App, Container> {
     
     public Object getTarget(App app, Class selectedEntityType, Object id) {
     
-        final Object target = app.getJpaContext().getDao(selectedEntityType).find(selectedEntityType, id);
+        final Object target = app.getActivePersistenceUnitContext().getDao().find(selectedEntityType, id);
 //System.out.println(selectedEntityType.getSimpleName()+"#"+id+" = "+target);        
         return target;
     }
@@ -108,10 +109,11 @@ public class DisplaySelectedEntitiesUIs implements Action<App, Container> {
                 app.getOrException(FormEntryComponentModel.class);
         
         final Container ui = app.getOrException(UIBuilderFromEntity.class)
-                .entryUIProvider(componentModel)
+                .componentModel(componentModel)
                 .sourceType(target instanceof Class ? (Class)target : target.getClass())
                 .sourceData(target instanceof Class ? null : target)
                 .editable(editable)
+                .addOptionToViewRelated(false)
                 .build();
         
         final UIDisplayHandler displayHandler = app.getUIContext().getDisplayHandler();

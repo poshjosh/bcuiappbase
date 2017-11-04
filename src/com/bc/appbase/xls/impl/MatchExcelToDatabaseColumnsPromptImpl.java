@@ -18,37 +18,25 @@ package com.bc.appbase.xls.impl;
 
 import com.bc.appbase.xls.MatchExcelToDatabaseColumnsPrompt;
 import com.bc.appbase.App;
-import com.bc.appbase.ui.ComponentModel;
-import com.bc.appbase.ui.ComponentModelImpl;
-import com.bc.appbase.ui.Components;
-import com.bc.appbase.ui.DateFromUIBuilder;
-import com.bc.appbase.ui.DateUIUpdater;
-import com.bc.appbase.ui.JCheckBoxMenuItemListComboBox;
-import com.bc.appbase.ui.builder.FromUIBuilder;
+import com.bc.appbase.ui.builder.MatchEntries;
 import com.bc.appbase.ui.builder.ThirdComponentProvider;
-import com.bc.appbase.ui.builder.UIBuilderFromMap;
-import com.bc.appbase.ui.builder.impl.FormEntryComponentModelImpl;
+import com.bc.appbase.ui.components.ComponentWalker;
 import com.bc.appbase.xls.SheetToDatabaseData;
-import com.bc.appcore.typeprovider.TypeProvider;
 import com.bc.appcore.util.RelationAccess;
-import com.bc.appcore.util.Selection;
-import com.bc.appcore.util.SelectionValues;
 import com.bc.appcore.util.SingleElementFixedSizeList;
-import com.bc.jpa.JpaMetaData;
+import com.bc.jpa.metadata.PersistenceUnitMetaData;
 import java.awt.Component;
 import java.awt.Container;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
@@ -56,10 +44,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import javax.persistence.Entity;
 import javax.swing.JCheckBox;
-import javax.swing.JComponent;
 import jxl.Cell;
 import jxl.Sheet;
 
@@ -76,7 +62,7 @@ public class MatchExcelToDatabaseColumnsPromptImpl implements MatchExcelToDataba
 
         Set<Class> entityTypes = this.getRelatedTypes(app, rowEntityType);
         
-        final JpaMetaData metaData = app.getJpaContext().getMetaData();
+        final PersistenceUnitMetaData metaData = app.getActivePersistenceUnitContext().getMetaData();
         entityTypes = this.getOptions(app, entityTypes);
         
         final Set<String> databaseCols = new TreeSet();
@@ -100,20 +86,16 @@ public class MatchExcelToDatabaseColumnsPromptImpl implements MatchExcelToDataba
         
         final String noSelectionName = "Select matching name(s)";
         
-        final Container ui = this.buildNameMatchUI(app, 
-                excelCols, databaseCols, noSelectionName, thirdComponentProvider);
+        final MatchEntries matchEntries = app.getOrException(MatchEntries.class);
+        final Map selections = matchEntries
+                .app(app)
+                .lhs(excelCols)
+                .rhs(databaseCols)
+                .noSelectionName(noSelectionName)
+                .thirdComponentProvider(thirdComponentProvider)
+                .dialogTitle("Select Matching Name(s)")
+                .build();
         
-        if(ui instanceof JComponent) {
-            app.getUIContext().positionHalfScreenRight(((JComponent)ui).getTopLevelAncestor());
-        }else{
-            app.getUIContext().positionHalfScreenRight(ui);
-        }
-          
-        app.getUIContext().getDisplayHandler().displayWithTopAndBottomActionButtons(
-                ui, "Select Matching Name(s)", " OK ", (String)null, true);
-
-        final Map selections = this.getSelectionsFromUI(app, ui, excelCols, noSelectionName);
-
         final Predicate isNullOrEmpty = (e) -> e == null || 
                 (e instanceof Collection && ((Collection)e).isEmpty());
         selections.values().removeIf(isNullOrEmpty);
@@ -123,7 +105,7 @@ public class MatchExcelToDatabaseColumnsPromptImpl implements MatchExcelToDataba
         final Map<Integer, List<String>> excelToDbCols = new LinkedHashMap();
         final Map<Integer, Function<Cell, List<Cell>>> spliters = new HashMap();
         
-        final Components components = new Components();
+        final ComponentWalker cx = app.getOrException(ComponentWalker.class);
         final BiConsumer populateOutput = (key, val) -> {
             
             final String excelCol = key.toString();
@@ -137,9 +119,9 @@ public class MatchExcelToDatabaseColumnsPromptImpl implements MatchExcelToDataba
             
             final Predicate<Component> test = (comp) -> (comboNameFmt.apply(excelCol)).equals(comp.getName());
             
-            final JCheckBox checkBox = (JCheckBox)components.findFirstChild(ui, test, false, null);
+            final Container ui = matchEntries.getUi();
             
-            final MatchExcelToDatabaseColumnsPromptImpl ref = MatchExcelToDatabaseColumnsPromptImpl.this;
+            final JCheckBox checkBox = (JCheckBox)cx.findFirstChild(ui, test, false, null);
             
             final Function spliter = getSpliter(excelColIndex, key, val, checkBox, null);
             
@@ -167,18 +149,7 @@ public class MatchExcelToDatabaseColumnsPromptImpl implements MatchExcelToDataba
         
         return new SheetToDatabaseDataImpl(excelToDbCols, spliters);
     }
-    
-    public Map getSelectionsFromUI(App app, Container ui, Set excelCols, String noSelectionName) {
-        final Map selections = (Map)app.getOrException(FromUIBuilder.class)
-                .componentModel(this.getComponentModel(app, excelCols, noSelectionName))
-                .filter(FromUIBuilder.Filter.ACCEPT_ALL)
-                .ui(ui)
-                .source(this.getUIParameters(excelCols))
-                .target(new LinkedHashMap())
-                .build();
-        return selections;
-    }
-    
+
     public Function<Cell, List<Cell>> getSpliter(int excelColIndex, Object key, Object val, JCheckBox checkBox, Function<Cell, List<Cell>> outputIfNone) {
         final String excelCol = key.toString();
         if(val instanceof Collection) {
@@ -221,8 +192,8 @@ public class MatchExcelToDatabaseColumnsPromptImpl implements MatchExcelToDataba
     public Set<Class> getOptions(App app, Collection<Class> optionsParam) {
         final Set<Class> output;
         if(optionsParam == null) {
-            final Set<String> puNames = app.getPersistenceUnitNames();
-            output = app.getJpaContext().getMetaData().getEntityClasses(puNames);
+            final Set<String> puNames = Collections.singleton(app.getActivePersistenceUnitContext().getName());
+            output = app.getPersistenceContext().getMetaData().getEntityClasses(puNames);
         }else{
             output = optionsParam instanceof Set ?
                     (Set<Class>)optionsParam : new LinkedHashSet(optionsParam);
@@ -242,73 +213,6 @@ public class MatchExcelToDatabaseColumnsPromptImpl implements MatchExcelToDataba
         }
         logger.log(Level.FINE, "Excel columns: {0}", sheetCols);
         return sheetCols;
-    }
-    
-    public Container buildNameMatchUI(App app, Set<String> lhs, Set<String> rhs, 
-            String noSelectionName, ThirdComponentProvider thirdComponentProvider) {
-        
-        final ComponentModel componentModel = this.getComponentModel(app, rhs, noSelectionName);
-        
-        return this.buildNameMatchUI(app, lhs, componentModel, thirdComponentProvider);
-    }
-    
-    public Container buildNameMatchUI(App app, Set<String> lhs, 
-            ComponentModel componentModel, ThirdComponentProvider thirdComponentProvider) {
-    
-        final Map<String, Object> uiParams = this.getUIParameters(lhs);
-        
-        logger.log(Level.FINE, "UI params: {0}", uiParams);
-        
-        final int labelWidth = this.getLeftColumnTextLength(lhs);
-        
-        final Container ui = app.getOrException(UIBuilderFromMap.class)
-                .typeProvider(TypeProvider.from(Object.class, String.class))
-                .entryUIProvider(new FormEntryComponentModelImpl(componentModel, labelWidth, thirdComponentProvider))
-                .sourceData(uiParams)
-                .build();
-        
-        return ui;
-    }
-    
-    public ComponentModel getComponentModel(App app, Set<String> rhs, String noSelectionName) {
-        final Selection noSelection = Selection.from(noSelectionName, null);
-        final SelectionValues selectionValues = SelectionValues.from(noSelection, new LinkedHashSet(rhs));
-        return this.getComponentModel(app, selectionValues);
-    }
-    
-    public ComponentModel getComponentModel(App app, SelectionValues selectionValues) {
-        final ComponentModel componentModel = new ComponentModelImpl(
-                selectionValues, 
-                app.getOrException(DateFromUIBuilder.class), 
-                app.getOrException(DateUIUpdater.class)){
-            @Override
-            public Component getSelectionComponent(Class valueType, 
-                    String name, Object value, List<Selection> selectionList) {
-                final JCheckBoxMenuItemListComboBox checkMenuListCombo = new JCheckBoxMenuItemListComboBox(selectionList);
-                return checkMenuListCombo;
-            }
-        };
-        return componentModel;
-    }
-    
-    private int getLeftColumnTextLength(Set<String> lhs) {
-        final Comparator<String> comparator = (s0, s1) -> Integer.compare(s0.length(), s1.length());
-        final Optional<String> colWithMaxLen = lhs.stream().collect(Collectors.maxBy(comparator));
-        logger.log(Level.FINER, "Collected column with max length, in optional: {0}", colWithMaxLen);
-        if(!colWithMaxLen.isPresent()) {
-            throw new IllegalArgumentException();
-        }
-        final int labelLength = colWithMaxLen.get().length() * 15;
-        return labelLength;
-    }
-    
-    public Map<String, Object> getUIParameters(Set<String> lhs) {
-        
-        final Map<String, Object> uiParams = new LinkedHashMap();
-        
-        lhs.forEach((col) -> uiParams.put(col, null));
-        
-        return uiParams;
     }
 }
 

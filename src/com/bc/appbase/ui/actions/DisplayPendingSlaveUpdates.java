@@ -20,34 +20,39 @@ import com.bc.appbase.App;
 import com.bc.appbase.ui.VerticalLayout;
 import com.bc.appcore.actions.Action;
 import com.bc.appcore.exceptions.TaskExecutionException;
-import com.bc.appcore.jpa.model.ResultModelImpl;
+import com.bc.appcore.jpa.model.EntityResultModelImpl;
 import com.bc.appcore.parameter.ParameterException;
-import com.bc.appcore.table.model.EntityTableModel;
-import com.bc.jpa.sync.MasterSlaveTypes;
+import com.bc.appcore.table.model.EntityTableModelImpl;
 import com.bc.jpa.sync.PendingUpdate;
 import com.bc.jpa.sync.PendingUpdatesManager;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.TableModel;
+import com.bc.appcore.jpa.model.EntityResultModel;
+import java.util.Set;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Aug 12, 2017 9:53:16 AM
  */
-public class DisplayPendingMasterUpdates implements Action<App, Integer> {
+public class DisplayPendingSlaveUpdates implements Action<App, Integer> {
+
+    private static final Logger logger = Logger.getLogger(DisplayPendingSlaveUpdates.class.getName());
     
     protected PendingUpdatesManager getPendingUpdates(App app) {
-        return app.getPendingMasterUpdatesManager();
+        return app.getPendingSlaveUpdatesManager();
     }
     
-    protected List<Class> getEntityTypes(App app) {
-        return app.getOrException(MasterSlaveTypes.class).getMasterTypes();
+    protected Set<Class> getEntityTypes(App app) {
+        return app.getMasterSlavePersistenceContext().getMaster().getMetaData().getEntityClasses();
     }
 
     @Override
@@ -66,7 +71,7 @@ public class DisplayPendingMasterUpdates implements Action<App, Integer> {
         
             final List<PendingUpdate> pendingUpdates = pum.getPendingUpdates();
             
-            final List<Class> entityTypes = this.getEntityTypes(app);
+            final Set<Class> entityTypes = this.getEntityTypes(app);
             
             final VerticalLayout layout = new VerticalLayout();
             
@@ -100,9 +105,13 @@ public class DisplayPendingMasterUpdates implements Action<App, Integer> {
         
         final List entities = this.getEntities(pendingUpdates, entityType);
 
-        final String [] columnNames = app.getJpaContext().getMetaData().getColumnNames(entityType);
+        final String [] columnNames = app.getTableColumnNames(entityType);
 
-        final TableModel tableModel = new EntityTableModel(entities, new ResultModelImpl(app, entityType, Arrays.asList(columnNames), 1));
+        final EntityResultModel resultModel = new EntityResultModelImpl(app, entityType, Arrays.asList(columnNames),
+                (column, value) -> false, (column, exception) -> logger.log(Level.WARNING, "Error updating: " + column, exception)
+        );
+        
+        final TableModel tableModel = new EntityTableModelImpl(entities, resultModel);
 
         final JTable table = new JTable(tableModel);
         

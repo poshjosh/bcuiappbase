@@ -16,16 +16,14 @@
 
 package com.bc.appbase.ui.builder.impl;
 
-import com.bc.appbase.ui.ComponentModel;
-import com.bc.appbase.ui.ComponentModel.ComponentProperties;
-import com.bc.appbase.ui.ComponentPropertiesImpl;
-import com.bc.appbase.ui.SequentialLayout;
+import com.bc.appbase.ui.components.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel.ComponentProperties;
+import com.bc.appbase.ui.components.ComponentPropertiesImpl;
 import com.bc.appbase.ui.builder.UIBuilder;
 import com.bc.appcore.jpa.SelectionContext;
 import com.bc.appcore.typeprovider.MemberTypeProvider;
 import java.awt.Component;
 import java.awt.Container;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JPanel;
@@ -47,10 +45,7 @@ public abstract class AbstractUIBuilder<U extends UIBuilder<I, Container>, I>
     private ComponentModel componentModel;
     private Boolean editable;
     
-    private final SequentialLayout sequentialLayout;
-
-    public AbstractUIBuilder(SequentialLayout sequentialLayout) {
-        this.sequentialLayout = Objects.requireNonNull(sequentialLayout);
+    public AbstractUIBuilder() {
         this.editable = Boolean.TRUE;
     }
     
@@ -86,7 +81,7 @@ public abstract class AbstractUIBuilder<U extends UIBuilder<I, Container>, I>
 
             logger.log(Level.FINE, "Updating `editable` property of components to: {0}", editable);
 
-            this.entryUIProvider(componentModel.deriveNewFrom(componentProperties));
+            this.componentModel(componentModel.deriveNewFrom(componentProperties));
         }
         
         if(this.build(this.sourceType, this.sourceData, this.targetUI)) {
@@ -111,8 +106,8 @@ public abstract class AbstractUIBuilder<U extends UIBuilder<I, Container>, I>
     }
     
     @Override
-    public U sourceData(I sourceData) {
-        this.sourceData = sourceData;
+    public U sourceData(I source) {
+        this.sourceData = source;
         return (U)this;
     }
 
@@ -135,7 +130,7 @@ public abstract class AbstractUIBuilder<U extends UIBuilder<I, Container>, I>
     }
     
     @Override
-    public U entryUIProvider(ComponentModel componentModel) {
+    public U componentModel(ComponentModel componentModel) {
         this.componentModel = componentModel;
         return (U)this;
     }
@@ -149,10 +144,6 @@ public abstract class AbstractUIBuilder<U extends UIBuilder<I, Container>, I>
     @Override
     public boolean isBuilt() {
         return this.built;
-    }
-
-    public SequentialLayout getSequentialLayout() {
-        return sequentialLayout;
     }
 
     public MemberTypeProvider getTypeProvider() {

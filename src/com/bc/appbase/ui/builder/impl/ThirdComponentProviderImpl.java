@@ -16,7 +16,7 @@
 
 package com.bc.appbase.ui.builder.impl;
 
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appbase.ui.UIContext;
 import com.bc.appbase.ui.builder.PromptUserCreateNew;
 import com.bc.appbase.ui.builder.ThirdComponentProvider;

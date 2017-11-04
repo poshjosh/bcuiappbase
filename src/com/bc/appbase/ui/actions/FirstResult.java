@@ -16,36 +16,11 @@
 
 package com.bc.appbase.ui.actions;
 
-import com.bc.appcore.actions.Action;
-import com.bc.appbase.ui.SearchResultsPanel;
-import java.awt.Container;
-import java.util.Map;
-import javax.swing.JTable;
-import com.bc.appbase.App;
-import com.bc.appcore.exceptions.TaskExecutionException;
-import com.bc.appcore.exceptions.SearchResultsNotFoundException;
-
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 24, 2017 8:32:10 AM
  */
-public class FirstResult implements Action<App, JTable> {
-
-    @Override
-    public JTable execute(App app, Map<String, Object> params) throws TaskExecutionException {
-
-        final JTable table = (JTable)params.get(JTable.class.getName());
-        
-        Container parent = table.getParent();
-        while( ! (parent instanceof SearchResultsPanel) ) {
-            parent = parent.getParent();
-        }
-        
-        try{
-            ((SearchResultsPanel)parent).loadSearchResultsPages(app.getUIContext(), app.getSearchContext(null), 0, 1);
-        }catch(SearchResultsNotFoundException e) {
-            throw new TaskExecutionException(e);
-        }
-        
-        return table;
+public class FirstResult extends LoadSearchResultsPanel {
+    public FirstResult() {
+        super((app, table) -> 0);
     }
 }

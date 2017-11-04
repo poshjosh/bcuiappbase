@@ -84,7 +84,7 @@ public class SheetProcessorContextImpl implements SheetProcessorContext {
 
     @Override
     public Function<List<CellResult>, List> getEntityListFromRowResultsBuilder(Class entityType) {
-        return new BuildEntitiesFromSheetRow(app, app.getJpaContext(), entityType);
+        return new BuildEntitiesFromSheetRow(app, entityType);
     }
 
     @Override

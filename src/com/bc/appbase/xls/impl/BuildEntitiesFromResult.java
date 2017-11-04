@@ -17,8 +17,8 @@
 package com.bc.appbase.xls.impl;
 
 import com.bc.appcore.ObjectFactory;
-import com.bc.jpa.JpaContext;
-import com.bc.appbase.jpa.EntityStructureFactory;
+import com.bc.jpa.context.JpaContext;
+import com.bc.appcore.jpa.EntityStructureFactory;
 import com.bc.appbase.xls.SheetToDatabaseMetaData;
 import com.bc.util.JsonFormat;
 import java.util.Collection;

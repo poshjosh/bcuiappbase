@@ -19,7 +19,7 @@ package com.bc.appbase.ui.actions;
 import com.authsvc.client.AppAuthenticationSession;
 import com.bc.appbase.App;
 import com.bc.appcore.properties.LoginProperties;
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appbase.ui.SequentialLayout;
 import com.bc.appbase.ui.VerticalLayout;
 import com.bc.appbase.properties.GetOptionsViaUserPrompt;
@@ -76,7 +76,7 @@ public abstract class AuthenticationAction implements Action<App, User> {
         private final SelectionContext selectionContext;
         private final TextSearch textSearch;
         public UserAuthPropertiesBuilder(App app) {
-            this(app.getOrException(SelectionContext.class), app.getJpaContext().getTextSearch());
+            this(app.getOrException(SelectionContext.class), app.getActivePersistenceUnitContext().getTextSearch());
         }
         
         public UserAuthPropertiesBuilder(SelectionContext selectionContext, TextSearch textSearch) {
@@ -174,7 +174,7 @@ public abstract class AuthenticationAction implements Action<App, User> {
         Map authParams;
         try{
             
-            final File file = app.getPropertiesPaths().getUserAuth().toFile();
+            final File file = app.getPropertiesContext().getUserAuth().toFile();
             if(!file.exists()) {
                 file.createNewFile();
             }
@@ -224,7 +224,7 @@ public abstract class AuthenticationAction implements Action<App, User> {
             
             this.doExecute(app, authParams);
             
-            app.getAction(ActionCommands.UPDATE_LOGIN_BUTTON_TEXT).executeSilently(app, null);
+            app.getAction(ActionCommands.UPDATE_LOGIN_BUTTON_TEXT).executeSilently(app);
             
             if(noOfTimesPromptShown > 0) {
                 app.getUIContext().showSuccessMessage(successMessage);

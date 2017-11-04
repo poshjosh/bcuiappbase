@@ -14,30 +14,29 @@
  * limitations under the License.
  */
 
-package com.bc.appbase.ui.builder.impl;
+package com.bc.appbase.ui.components;
 
-import com.bc.appbase.ui.ComponentModel;
 import com.bc.appbase.ui.FormEntryPanel;
-import com.bc.appbase.ui.builder.FormEntryComponentModel;
-import com.bc.appbase.ui.builder.ThirdComponentProvider;
-import com.bc.appcore.util.Selection;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Objects;
 import java.util.logging.Logger;
-import javax.persistence.GeneratedValue;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
 import javax.swing.JTextArea;
+import com.bc.appbase.ui.components.ComponentModel.ComponentProperties;
+import java.awt.Component;
+import java.util.Objects;
+import com.bc.appbase.ui.builder.ThirdComponentProvider;
+import com.bc.appcore.util.Selection;
+import java.lang.reflect.Field;
+import java.util.List;
+import javax.persistence.GeneratedValue;
+import javax.swing.JList;
+import javax.swing.JTable;
 
 /**
- * @author Chinomso Bassey Ikwuagwu on Jul 27, 2017 8:40:34 PM
+ * @author Chinomso Bassey Ikwuagwu on Mar 26, 2017 10:57:32 PM
  */
-public class FormEntryComponentModelImplOld implements FormEntryComponentModel {
+public class FormEntryComponentModelImpl implements FormEntryComponentModel {
 
     private static final Logger logger = Logger.getLogger(FormEntryComponentModelImpl.class.getName());
     
@@ -47,11 +46,11 @@ public class FormEntryComponentModelImplOld implements FormEntryComponentModel {
     
     private final ThirdComponentProvider thirdComponentProvider;
 
-    public FormEntryComponentModelImplOld(ComponentModel componentModel) {
+    public FormEntryComponentModelImpl(ComponentModel componentModel) {
         this(componentModel, -1, ThirdComponentProvider.PROVIDE_NONE);
     }
     
-    public FormEntryComponentModelImplOld(ComponentModel componentModel, int labelWidth, 
+    public FormEntryComponentModelImpl(ComponentModel componentModel, int labelWidth, 
             ThirdComponentProvider thirdComponentProvider) {
         this.componentModel = Objects.requireNonNull(componentModel);
         this.labelWidth = labelWidth;
@@ -65,23 +64,23 @@ public class FormEntryComponentModelImplOld implements FormEntryComponentModel {
 
     @Override
     public JPanel getComponent(Class parentType, Class valueType, String name, Object value) {
-//System.out.println("getComponent(..) "+valueType.getSimpleName()+' '+name+'='+value+". @"+this.getClass());                
+//System.out.println(valueType.getSimpleName()+' '+name+'='+value+". @"+this.getClass());                
         final Component component = componentModel.getComponent(parentType, valueType, name, value);
+        
+        final JScrollPane scrolls = this.getEntryComponentScrolls(valueType, name, value, component, null);
+        if(scrolls != null) {
+            scrolls.setViewportView(component);
+        }
         
         final ComponentModel.ComponentProperties props = componentModel.getComponentProperties();
         final int width = props.getWidth(component);
         final int height = props.getHeight(component);
         
-        final JScrollPane scrolls = this.getEntryComponentScrolls(valueType, name, value, component, null);
-        if(scrolls != null) {
-            scrolls.setPreferredSize(new Dimension(width, height));
-        }
-        
         final JLabel label = this.getLabel(valueType, name, value);
         
         final FormEntryPanel ui = new FormEntryPanel(
-                label, this.labelWidth == -1 ? props.getWidth(component) : this.labelWidth, props.getHeight(label), 
-                component, width, height, 
+                label, this.labelWidth == -1 ? width : this.labelWidth, props.getHeight(label), 
+                scrolls != null ? scrolls : component, width, height, 
                 props.getFont(component).getName(), 
                 this.thirdComponentProvider.get(parentType, valueType, name, value, label, component, null)
         );
@@ -89,14 +88,11 @@ public class FormEntryComponentModelImplOld implements FormEntryComponentModel {
         try{
             final Field field = parentType.getDeclaredField(name);
             if(field.getAnnotation(GeneratedValue.class) != null) {
-                component.setEnabled(false);
+                ComponentWalker cx = new ComponentWalkerImpl();
+                cx.transverseChildren(component, true, (comp) -> { comp.setEnabled(false); });
             }
         }catch(NoSuchFieldException | SecurityException e) {
             logger.warning("Encountered exception while trying to access field named: "+name+", in type: "+parentType+". Exception: "+e);
-        }
-        
-        if(scrolls != null) {
-            ui.setEntryComponentScrollPane(scrolls);
         }
         
         ui.initComponents();
@@ -107,12 +103,12 @@ public class FormEntryComponentModelImplOld implements FormEntryComponentModel {
     }
 
     @Override
-    public ComponentModel deriveNewFrom(ComponentModel.ComponentProperties properties) {
+    public ComponentModel deriveNewFrom(ComponentProperties properties) {
         return new FormEntryComponentModelImpl(this.componentModel.deriveNewFrom(properties), this.labelWidth, this.thirdComponentProvider);
     }
 
     @Override
-    public ComponentModel.ComponentProperties getComponentProperties() {
+    public ComponentProperties getComponentProperties() {
         return componentModel.getComponentProperties();
     }
 
@@ -138,18 +134,23 @@ public class FormEntryComponentModelImplOld implements FormEntryComponentModel {
 
     @Override
     public List<Selection> getSelectionValues(Class parentType, Class valueType, String name, Object value) {
-//System.out.println("getSelectionValues(..) "+valueType.getSimpleName()+' '+name+'='+value+". @"+this.getClass());                                
         final List<Selection> values = componentModel.getSelectionValues(parentType, valueType, name, value);
         return values;
     }
     
     public JScrollPane getEntryComponentScrolls(Class valueType, 
             String name, Object value, Component component, JScrollPane outputIfNone) {
-        if(component instanceof JTextArea || component instanceof JTable){
-            return new JScrollPane();
+        int size;
+        if(component instanceof JTextArea){
+            size = ((JTextArea)component).getRows();
+        }else if(component instanceof JList) { 
+            size = ((JList)component).getModel().getSize();
+        }else if(component instanceof JTable) { 
+            size = ((JTable)component).getRowCount();
         }else{
-            return outputIfNone;
+            size = 1;
         }
+        return size > 1 ? new JScrollPane() : outputIfNone;
     }
     
     public JLabel getLabel(Class valueType, String name, Object value) {

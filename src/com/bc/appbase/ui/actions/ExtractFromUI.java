@@ -17,10 +17,10 @@
 package com.bc.appbase.ui.actions;
 
 import com.bc.appbase.App;
-import com.bc.appbase.ui.ComponentModelImpl;
-import com.bc.appbase.ui.builder.FormEntryComponentModel;
+import com.bc.appbase.ui.components.ComponentModelImpl;
+import com.bc.appbase.ui.components.FormEntryComponentModel;
 import com.bc.appbase.ui.builder.FromUIBuilder;
-import com.bc.appbase.ui.builder.impl.FormEntryComponentModelImpl;
+import com.bc.appbase.ui.components.FormEntryComponentModelImpl;
 import com.bc.appcore.actions.Action;
 import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.parameter.ParameterException;

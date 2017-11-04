@@ -20,11 +20,9 @@ package com.bc.appbase.ui.actions;
 import com.bc.appcore.actions.Action;
 import java.util.Map;
 import javax.swing.JOptionPane;
-import com.bc.jpa.sync.JpaSync;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import com.bc.appbase.App;
 import com.bc.appcore.exceptions.TaskExecutionException;
+import com.bc.appcore.parameter.ParameterException;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 20, 2017 7:33:54 PM
@@ -32,64 +30,20 @@ import com.bc.appcore.exceptions.TaskExecutionException;
 public class ExitUIThenExit implements Action<App, Boolean> {
 
     @Override
-    public Boolean execute(App app, Map<String, Object> params) throws TaskExecutionException {
+    public Boolean execute(App app, Map<String, Object> params) 
+            throws ParameterException, TaskExecutionException {
 
         final int selection = JOptionPane.showConfirmDialog(
                 app.getUIContext().getMainFrame(), "Are you sure you want to exit?", 
                 "Exit?", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         
         if(selection == JOptionPane.YES_OPTION) {
-                      
-            final JpaSync jpaSync = app.getJpaSync();
-
-            if(!jpaSync.isRunning()) {
-              
-                app.shutdown();
-                
-                System.exit(0);
-                
-                return Boolean.TRUE;
-            }else{
-
-                app.getUIContext().dispose(); 
-
-                this.waitForJpaSyncThenExit(app, jpaSync);
-                
-                return Boolean.FALSE;
-            }
+            
+            return (Boolean)app.getAction(ActionCommands.EXIT).execute(app, params);
+            
         }else{
                                       
             return Boolean.FALSE;
         }
-    }
-    
-    private void waitForJpaSyncThenExit(App app, JpaSync jpaSync) {
-        
-        final Thread waitForJpaSyncThread = new Thread("Wait_for_JpaSync_then_exit_Thread") {
-            @Override
-            public synchronized void run() {
-
-                try{
-
-                    while(jpaSync.isRunning()) {
-                        this.wait(1000);
-                    }
-
-                }catch(RuntimeException | InterruptedException e) {
-
-                    Logger.getLogger(this.getClass().getName()).log(Level.WARNING, 
-                            "Exception while waiting for JpaSync to complete", e);
-                }finally{
-
-                    this.notifyAll();
-
-                    app.shutdown();
-
-                    System.exit(0);
-                }
-            }
-        };
-
-        waitForJpaSyncThread.start();
     }
 }

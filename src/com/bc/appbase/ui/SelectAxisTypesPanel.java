@@ -44,8 +44,7 @@ public class SelectAxisTypesPanel extends javax.swing.JPanel {
     
     public void init(App app) {
         
-        final Set<String> puNames = app.getPersistenceUnitNames();
-        final Set<Class> entityTypes = app.getJpaContext().getMetaData().getEntityClasses(puNames);
+        final Set<Class> entityTypes = app.getActivePersistenceUnitContext().getMetaData().getEntityClasses();
         
         final List<Selection> options = new ArrayList();
         final SelectionContext selectionContext = app.getOrException(SelectionContext.class);

@@ -17,9 +17,9 @@
 package com.bc.appbase.ui.actions;
 
 import com.bc.appbase.App;
-import com.bc.appbase.jpa.EntityStructureFactory;
+import com.bc.appcore.jpa.EntityStructureFactory;
 import com.bc.appcore.parameter.ParameterExtractor;
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appbase.ui.builder.FromUIBuilder;
 import com.bc.appcore.actions.Action;
 import com.bc.appcore.exceptions.TaskExecutionException;
@@ -29,7 +29,6 @@ import com.bc.appcore.parameter.ParameterException;
 import com.bc.appcore.util.RelationAccess;
 import java.awt.Window;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,14 +92,10 @@ public class CreateAndUpdateEntityFromUI<E> implements Action<App, E> {
             
             this.updateDatabase(app, entities);
             
-            try{
-                app.getAction(ActionCommands.REFRESH_ALL_RESULTS).execute(app, Collections.EMPTY_MAP);
-            }catch(ParameterException | TaskExecutionException e) {
-                logger.log(Level.WARNING, "Error refreshing results", e);
-            }
-
             app.getUIContext().showSuccessMessage("Success");
             
+            app.getAction(ActionCommands.REFRESH_ALL_RESULTS).executeSilently(app);
+
             E output = null;
             for(Object element : entities) {
                 if(entityType.isAssignableFrom(element.getClass())) {
@@ -200,7 +195,7 @@ public class CreateAndUpdateEntityFromUI<E> implements Action<App, E> {
 
                 final Object selectedId = singletonEntry.getKey();
 
-                final Object selectedEntity = app.getDao(selectedEntityType).find(selectedEntityType, selectedId);
+                final Object selectedEntity = app.getActivePersistenceUnitContext().getDao().find(selectedEntityType, selectedId);
 
                 output = selectedEntity;
             }

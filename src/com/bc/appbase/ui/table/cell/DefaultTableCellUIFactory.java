@@ -16,14 +16,18 @@
 
 package com.bc.appbase.ui.table.cell;
 
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
+import com.bc.ui.table.cell.ColumnWidthsImpl;
 import com.bc.ui.table.cell.TableCellSize;
 import com.bc.ui.table.cell.TableCellUIFactoryImpl;
 import com.bc.ui.table.cell.TableCellUIState;
 import java.awt.Component;
 import java.util.Objects;
 import com.bc.ui.table.cell.TableCellDisplayFormat;
+import com.bc.ui.table.cell.TableCellDisplayFormatImpl;
+import com.bc.ui.table.cell.TableCellSizeImpl;
 import com.bc.ui.table.cell.TableCellSizeManager;
+import com.bc.ui.table.cell.TableCellSizeManagerImpl;
 import java.text.DateFormat;
 import javax.swing.table.TableModel;
 
@@ -40,10 +44,12 @@ public class DefaultTableCellUIFactory extends TableCellUIFactoryImpl {
 
     public DefaultTableCellUIFactory(int minCellHeight, int maxCellHeight, DateFormat dateFormat,
             ComponentModel componentModel, Class entityType, TableModel tableModel) {
-        super(minCellHeight, maxCellHeight, dateFormat);
-        this.componentModel = Objects.requireNonNull(componentModel);
-        this.entityType = Objects.requireNonNull(entityType);
-        this.tableModel = Objects.requireNonNull(tableModel);
+        this(new DefaultTableCellUIState(), 
+                new TableCellSizeImpl(new TableCellDisplayFormatImpl(dateFormat), minCellHeight, maxCellHeight),
+                new TableCellDisplayFormatImpl(dateFormat),
+                new TableCellSizeManagerImpl(new ColumnWidthsImpl()),
+                componentModel, entityType, tableModel
+        ); 
     }
     
     public DefaultTableCellUIFactory(

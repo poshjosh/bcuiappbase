@@ -20,7 +20,6 @@ import com.bc.appbase.App;
 import com.bc.appbase.ui.SearchResultsPanel;
 import com.bc.appbase.ui.actions.ParamNames;
 import com.bc.appcore.exceptions.SearchResultsNotFoundException;
-import com.bc.appcore.jpa.model.ResultModel;
 import com.bc.appcore.parameter.ParametersBuilder;
 import com.bc.jpa.search.SearchResults;
 import java.util.Arrays;
@@ -28,11 +27,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JTable;
 import com.bc.appcore.AppCore;
+import com.bc.jpa.EntityUpdater;
+import com.bc.jpa.context.PersistenceUnitContext;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Apr 1, 2017 4:19:41 PM
@@ -78,9 +78,9 @@ public class SelectedRecordsParametersBuilder implements ParametersBuilder<Searc
             
             Class entityType = null;
             
-            String idColumnName = null;
+            EntityUpdater updater = null;
             
-            ResultModel resultModel = null;
+            String idColumnName = null;
             
             for(int i = 0; i < selectedRowIndices.length; i++) {
                 
@@ -90,11 +90,15 @@ public class SelectedRecordsParametersBuilder implements ParametersBuilder<Searc
                 
                 if(entityType == null) {
                     entityType = entity.getClass();
-                    idColumnName = app.getJpaContext().getMetaData().getIdColumnName(entityType);
-                    resultModel = Objects.requireNonNull(app.getResultModel(entityType, null));
+                    final PersistenceUnitContext puContext = app.getActivePersistenceUnitContext();
+                    updater = puContext.getEntityUpdater(entityType);
+                    idColumnName = puContext.getMetaData().getIdColumnName(entityType);
                 }
                 
-                final Integer id = this.getId(resultModel, entity, rowIndex, idColumnName);
+                final Integer id = (Integer)updater.getValue(entity, idColumnName);
+                
+                final String idCol = idColumnName;
+                logger.fine(() -> "[" + rowIndex + ':' + idCol + "] = " + id);
                 
                 selectedTaskids[i] = id;
             }
@@ -109,14 +113,6 @@ public class SelectedRecordsParametersBuilder implements ParametersBuilder<Searc
         }
         
         return params;
-    }
-    
-    private Integer getId(ResultModel resultModel, Object entity, int rowIndex, String idColumnName) {
-        final Integer id = (Integer)resultModel.get(entity, rowIndex, idColumnName);
-        if(logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Row: {0}, {1}={2}", new Object[]{rowIndex, idColumnName, id});
-        }
-        return id;
     }
     
     private Object getEntity(int tableRowIndex) {

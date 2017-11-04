@@ -18,20 +18,19 @@ package com.bc.appbase.ui.builder.impl;
 
 import com.bc.appbase.ui.SequentialLayout;
 import com.bc.appbase.ui.VerticalLayout;
+import com.bc.appbase.ui.builder.UIBuilderFromMap;
 import java.awt.Component;
 import java.awt.Container;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.persistence.Entity;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Mar 22, 2017 5:15:16 PM
  */
-public class UIBuilderFromEntityMap extends UIBuilderFromMapImpl {
+public class UIBuilderFromEntityMap extends UIBuilderImpl<Map> implements UIBuilderFromMap {
 
     private static final Logger logger = Logger.getLogger(UIBuilderFromEntityMap.class.getName());
     
@@ -42,36 +41,33 @@ public class UIBuilderFromEntityMap extends UIBuilderFromMapImpl {
     }
     
     public UIBuilderFromEntityMap(SequentialLayout sequentialLayout) {
-        super(sequentialLayout);
+        super((type, map) -> map, sequentialLayout);
         this.builtEntityTypes = new HashSet();
     }
 
+    @Override
+    public boolean isParent(Container parentContainer, Class sourceType, 
+            String name, Object value, Class valueType) {
+        return value != null && Map.class.isAssignableFrom(value.getClass()) || 
+                Map.class.isAssignableFrom(valueType);
+    }
+    
     @Override
     public boolean accept(Class type) {
         final boolean accepted = !this.builtEntityTypes.contains(type);
         return accepted;
     }
     
-    public boolean addToBuiltEntityTypes(Class type) {
-        if(type.getAnnotation(Entity.class) != null) {
-            return this.builtEntityTypes.add(type);
-        }else{
-            return false;
-        }
-    }
+//    public boolean addToBuiltEntityTypes(Class type) {
+//        if(type.getAnnotation(Entity.class) != null) {
+//            return this.builtEntityTypes.add(type);
+//        }else{
+//            return false;
+//        }
+//    }
 
     @Override
-    public Collection<Component> getComponents(Class sourceType, Map source, Container container) {
-        
-//        this.addToBuiltEntityTypes(sourceType);
-        
-        final Collection<Component> components = super.getComponents(sourceType, source, container);
-        
-        return components;
-    }
-
-    @Override
-    public Component getEntryUI(Container parentContainer, Class sourceType, 
+    public Component getEntryUIMain(Container parentContainer, Class sourceType, 
             String name, Object value, Class valueType, Component outputIfNone) {
 //System.out.println(valueType.getSimpleName()+' '+name+'='+value+". @"+this.getClass());                
         final Component output;
@@ -88,7 +84,7 @@ public class UIBuilderFromEntityMap extends UIBuilderFromMapImpl {
             
         }else{
 
-            output = super.getEntryUI(parentContainer, sourceType, name, value, valueType, outputIfNone);
+            output = super.getEntryUIMain(parentContainer, sourceType, name, value, valueType, outputIfNone);
         }  
             
         return output == null ? outputIfNone : output;

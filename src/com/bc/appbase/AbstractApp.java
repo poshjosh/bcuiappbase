@@ -17,9 +17,9 @@
 package com.bc.appbase;
 
 import com.bc.appbase.parameter.SelectedRecordsParametersBuilder;
-import java.util.Objects;
 import java.util.logging.Logger;
 import com.bc.appbase.ui.MainFrame;
+import com.bc.appbase.ui.PromptException;
 import com.bc.appbase.ui.SearchResultsPanel;
 import com.bc.appbase.ui.UIContext;
 import com.bc.appbase.ui.UIContextBase;
@@ -27,10 +27,12 @@ import com.bc.appbase.ui.actions.ActionCommands;
 import com.bc.appcore.AbstractAppCore;
 import com.bc.appcore.AppContext;
 import com.bc.appcore.ObjectFactory;
+import com.bc.appcore.jpa.model.EntityResultModel;
+import com.bc.appcore.jpa.model.EntityResultModelImpl;
 import javax.swing.JFrame;
 import com.bc.appcore.parameter.ParametersBuilder;
 import java.net.URL;
-import java.util.Comparator;
+import java.util.Arrays;
 import javax.swing.ImageIcon;
 
 /**
@@ -40,20 +42,19 @@ public abstract class AbstractApp extends AbstractAppCore implements App {
     
     private transient static final Logger logger = Logger.getLogger(AbstractApp.class.getName());
     
-    private UIContext ui;
-    
-    private final AppContext appContext;
+    private UIContext uiContext;
     
     public AbstractApp(AppContext appContext) {
         super(appContext);
-        this.appContext = Objects.requireNonNull(appContext);
     }
     
     @Override
     public void init() {
+        
         super.init();
-        this.ui = this.createUIContext();
-        final JFrame frame = this.ui.getMainFrame();
+        
+        this.uiContext = this.createUIContext();
+        final JFrame frame = this.uiContext.getMainFrame();
         if(frame instanceof MainFrame) {
             ((MainFrame)frame).init(this);
         }
@@ -90,7 +91,20 @@ public abstract class AbstractApp extends AbstractAppCore implements App {
     
     @Override
     public UIContext getUIContext() {
-        return ui;
+        return uiContext;
+    }
+
+    @Override
+    public EntityResultModel createResultModel(
+            Class entityType, String[] columnNames) {
+        
+        if(entityType == null) {
+            entityType = this.getDefaultEntityType();
+        }
+        
+        return new EntityResultModelImpl(this, entityType, 
+                Arrays.asList(columnNames), 
+                (col, val) -> true, new PromptException(this.getUIContext()));
     }
 
     @Override
@@ -111,10 +125,5 @@ public abstract class AbstractApp extends AbstractAppCore implements App {
         }        
 
         return builder;
-    }
-
-    @Override
-    public Comparator getEntityOrderComparator() {
-        return Comparator.naturalOrder();
     }
 }

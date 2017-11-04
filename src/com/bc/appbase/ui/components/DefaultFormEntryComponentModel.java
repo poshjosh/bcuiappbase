@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.bc.appbase.ui.builder.impl;
+package com.bc.appbase.ui.components;
 
-import com.bc.appbase.ui.ComponentModel;
 import com.bc.appbase.ui.builder.ThirdComponentProvider;
 import com.bc.appcore.jpa.model.ColumnLabelProvider;
 import com.bc.appcore.typeprovider.TypeProvider;
-import com.bc.jpa.JpaContext;
+import com.bc.jpa.context.JpaContext;
+import com.bc.jpa.context.PersistenceUnitContext;
 import java.sql.ResultSetMetaData;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,18 +37,18 @@ public class DefaultFormEntryComponentModel extends FormEntryComponentModelImpl 
 
     private static final Logger logger = Logger.getLogger(DefaultFormEntryComponentModel.class.getName());
 
-    private final JpaContext jpaContext;
+    private final PersistenceUnitContext puContext;
     private final TypeProvider typeProvider;
     private final ColumnLabelProvider columnLabelProvider;
     private final Map<Class, int[]> _$cnullables;
     private final Map<Class, List<String>> _$cnames;
     
     public DefaultFormEntryComponentModel(
-            JpaContext jpaContext, TypeProvider typeProvider, 
+            PersistenceUnitContext puContext, TypeProvider typeProvider, 
             ComponentModel componentModel, int labelWidth, 
             ColumnLabelProvider columnLabelProvider, ThirdComponentProvider thirdComponentProvider) {
         super(componentModel, labelWidth, thirdComponentProvider);
-        this.jpaContext = Objects.requireNonNull(jpaContext);
+        this.puContext = Objects.requireNonNull(puContext);
         this.typeProvider = typeProvider;
         this.columnLabelProvider = columnLabelProvider;
         this._$cnullables = new HashMap<>();
@@ -56,7 +57,7 @@ public class DefaultFormEntryComponentModel extends FormEntryComponentModelImpl 
     
     @Override
     public ComponentModel deriveNewFrom(ComponentProperties properties) {
-        return new DefaultFormEntryComponentModel(this.jpaContext, this.typeProvider, 
+        return new DefaultFormEntryComponentModel(this.puContext, this.typeProvider, 
                 this.getComponentModel().deriveNewFrom(properties), this.getLabelWidth(), 
                 this.columnLabelProvider, this.getThirdComponentProvider());
     }
@@ -64,12 +65,12 @@ public class DefaultFormEntryComponentModel extends FormEntryComponentModelImpl 
     @Override
     public String getLabelText(Class valueType, String name, Object value) {
 //System.out.println("================ "+valueType.getSimpleName()+" "+name+". @"+this.getClass());        
-        final Class entityType = this.getParentType(valueType, name, value);
+        final Class entityType = this.getParentType(valueType, name, value, null);
         
-        final List columnNames = this.getColumnNames(entityType);
+        final List columnNames = entityType == null ? Collections.EMPTY_LIST : this.getColumnNames(entityType);
 //System.out.println("================ Entity type: "+entityType+", columnNames: "+columnNames+". @"+this.getClass());                                       
 
-        final String columnLabel = this.columnLabelProvider.getColumnLabel(entityType, name);
+        final String columnLabel = entityType == null ? name: this.columnLabelProvider.getColumnLabel(entityType, name);
         
         final String labelText;
         
@@ -99,16 +100,16 @@ public class DefaultFormEntryComponentModel extends FormEntryComponentModelImpl 
         if(cached != null) {
             columnNames = cached;
         }else{
-            columnNames = Arrays.asList(jpaContext.getMetaData().getColumnNames(entityType));
+            columnNames = Arrays.asList(puContext.getMetaData().getColumnNames(entityType));
             Objects.requireNonNull(columnNames);
             this._$cnames.put(entityType, columnNames);
         }
         return columnNames;
     }
     
-    public Class getParentType(Class valueType, String name, Object value) {
+    public Class getParentType(Class valueType, String name, Object value, Class outputIfNone) {
         final List<Class> parentTypeList = this.typeProvider.getParentTypeList(valueType, name, value);
-        final Class parentType = parentTypeList.get(0);
+        final Class parentType = parentTypeList.isEmpty() ? outputIfNone : parentTypeList.get(0);
         return parentType;
     }
     
@@ -118,15 +119,15 @@ public class DefaultFormEntryComponentModel extends FormEntryComponentModelImpl 
         if(cached != null) {
             columnNullables = cached;
         }else{
-            columnNullables = jpaContext.getMetaData().getColumnNullables(entityType);
+            columnNullables = puContext.getMetaData().getColumnNullables(entityType);
             Objects.requireNonNull(columnNullables);
             this._$cnullables.put(entityType, columnNullables);
         }
         return columnNullables;
     }
 
-    public JpaContext getJpaContext() {
-        return jpaContext;
+    public PersistenceUnitContext getPersistenceUnitContext() {
+        return puContext;
     }
 
     public TypeProvider getTypeProvider() {

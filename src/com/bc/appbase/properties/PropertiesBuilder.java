@@ -16,7 +16,7 @@
 
 package com.bc.appbase.properties;
 
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appbase.ui.SequentialLayout;
 import com.bc.appcore.properties.OptionsProvider;
 import java.awt.Component;

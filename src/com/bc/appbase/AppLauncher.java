@@ -38,12 +38,7 @@ import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.jpa.SearchContext;
 import com.bc.appcore.parameter.ParameterException;
 import com.bc.config.Config;
-import com.bc.jpa.JpaContext;
 import com.bc.jpa.search.SearchResults;
-import com.bc.jpa.sync.PendingUpdatesManager;
-import com.bc.jpa.sync.impl.PendingUpdatesManagerImpl;
-import com.bc.jpa.sync.impl.UpdaterImpl;
-import com.bc.jpa.sync.predicates.PersistenceCommunicationsLinkFailureTest;
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
@@ -55,7 +50,6 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
-import com.bc.appcore.Names;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Aug 20, 2017 10:06:03 PM
@@ -70,7 +64,7 @@ public class AppLauncher<A extends App> extends AppLauncherCore<A> {
 
     public AppLauncher() { }
 
-    public AppLauncher processLog(String startupScreenTitle) {
+    public AppLauncher processLogUIForTitle(String startupScreenTitle) {
         this.processLog(new ScreenLog(startupScreenTitle, "Startup Log", new MessageTextAreaOnStartup(5, 20), 400, 300));
         return this;
     }
@@ -108,21 +102,28 @@ public class AppLauncher<A extends App> extends AppLauncherCore<A> {
         };
 
         final Properties defaultProperties = this.loadAuthProperties();
-
+        
         logger.fine(() -> "Loaded auth properties: " + (defaultProperties == null ? null : defaultProperties.stringPropertyNames()));
         
-        final File file = this.getPropertiesContext().getAuthsvc().toFile();
-        
-        propertiesBuilder
-                .optionsProvider("Configure Application Authentication")
-                .sourceFile(file)
-                .displayPromptAtLeastOnce(this.isNewInstallation())
-                .validator(propertiesValidator)
-                .maxTrials(this.getMaxTrials())
-                .defaultValues(defaultProperties)
-                .build();
-        
-        return Objects.requireNonNull(this.getAuthenticationSession());
+        if(defaultProperties == null || defaultProperties.stringPropertyNames().isEmpty()) {
+            
+            return null;
+            
+        }else{
+            
+            final File file = this.getPropertiesContext().getAuthsvc().toFile();
+
+            propertiesBuilder
+                    .optionsProvider("Configure Application Authentication")
+                    .sourceFile(file)
+                    .displayPromptAtLeastOnce(this.isNewInstallation())
+                    .validator(propertiesValidator)
+                    .maxTrials(this.getMaxTrials())
+                    .defaultValues(defaultProperties)
+                    .build();
+
+            return Objects.requireNonNull(this.getAuthenticationSession());
+        }
     }
     
     @Override
@@ -147,16 +148,6 @@ public class AppLauncher<A extends App> extends AppLauncherCore<A> {
     @Override
     public JpaContextManager getJpaContextManager() {
         return new JpaContextManagerWithUserPrompt(this.uiContext, this.getPropertiesContext(), this.getMasterPersistenceUnitTest());
-    }
-
-    @Override
-    protected PendingUpdatesManager createPendingMasterUpdatesManager(JpaContext jpaContext) {
-        final Predicate<Throwable> commsFailureTest = new PersistenceCommunicationsLinkFailureTest();
-        return new PendingUpdatesManagerImpl(
-                this.getPendingUpdatesFilePath(Names.PENDING_MASTER_UPDATES_FILE_NAME).toFile(),
-                new UpdaterImpl(jpaContext, this.getMasterPersistenceUnitTest()),
-                commsFailureTest
-        );
     }
 
     @Override
@@ -200,9 +191,9 @@ public class AppLauncher<A extends App> extends AppLauncherCore<A> {
 
         configureUI(uiContext, config);
 
-        if(this.isEnableSync()) {
-            app.getAction(ActionCommands.SYNC_IF_SLAVE_DATABASE_EMPTY).executeSilently(app, null);
-        }
+//        if(this.isEnableSync()) {
+//            app.getAction(ActionCommands.SYNC_IF_SLAVE_DATABASE_EMPTY).executeSilently(app);
+//        }
 
         processLog.log("Loading search results");
 
@@ -229,7 +220,7 @@ public class AppLauncher<A extends App> extends AppLauncherCore<A> {
 
         final SearchContext<T> searchContext = app.getSearchContext(entityType);
 
-        final SearchResults<T> searchResults = searchContext.getSearchResults();
+        final SearchResults<T> searchResults = searchContext.searchAll();
 
         final JFrame frame = this.uiContext.getMainFrame();
         
@@ -239,7 +230,7 @@ public class AppLauncher<A extends App> extends AppLauncherCore<A> {
             
             final SearchResultsPanel resultsPanel = ((MainFrame)frame).getSearchResultsPanel();
             
-            resultsPanel.loadSearchResultsUI(uiContext, searchContext, 
+            resultsPanel.load(searchContext, 
                     searchResults, "AppMainFrame", 0, 1, true);
         }
     }

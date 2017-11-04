@@ -16,8 +16,9 @@
 
 package com.bc.appbase.ui.builder.impl;
 
-import com.bc.appbase.ui.ComponentModel;
-import com.bc.appbase.ui.Components;
+import com.bc.appbase.ui.components.ComponentModel;
+import com.bc.appbase.ui.components.ComponentWalker;
+import com.bc.appbase.ui.components.ComponentWalkerImpl;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.ItemSelectable;
@@ -65,16 +66,17 @@ public class MapFromUIBuilder extends AbstractFromUIBuilder<Container, Map> {
         logger.log(level, "Building into: {0}", target.getClass().getName());
         
         final ComponentModel componentModel = this.getComponentModel();
+        Objects.requireNonNull(componentModel);
         
         logger.log(level, "Keys: {0}", keys);
         
-        final Components components = new Components();
+        final ComponentWalker cx = new ComponentWalkerImpl();
         
         for(Object key : keys) {
             
             final String name = key.toString();
             
-            final Component childUI = components.findFirstChild(ui, (Component c) -> name.equals(c.getName()), null);
+            final Component childUI = cx.findFirstChild(ui, (Component c) -> name.equals(c.getName()), null);
             
             if(childUI == null) {
                 logger.log(level, "No UI component found for: {0}", key);

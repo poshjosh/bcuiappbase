@@ -20,6 +20,8 @@ import com.bc.appbase.ui.UIContext;
 import com.bc.appcore.AppContext;
 import com.bc.appcore.actions.Action;
 import com.bc.appcore.AppCore;
+import com.bc.appcore.ResultHandler;
+import java.util.Objects;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 7, 2017 11:10:58 PM
@@ -29,5 +31,10 @@ public interface App extends AppCore, AppContext {
     @Override
     Action<App, ?> getAction(String actionCommand);
 
+    @Override
+    default ResultHandler getResultHandler(String name) {
+        return new ResultHandlerWithUserPrompt(this.getUIContext(), Objects.requireNonNull(name));
+    }
+    
     UIContext getUIContext();
 }

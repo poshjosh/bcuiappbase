@@ -20,64 +20,78 @@ import com.bc.appcore.jpa.SearchContext;
 import com.bc.jpa.search.SearchResults;
 import java.awt.Font;
 import java.awt.GraphicsConfiguration;
+import java.awt.GridLayout;
 import java.awt.HeadlessException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuBar;
+import javax.swing.JPanel;
 import javax.swing.JTable;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Jun 29, 2017 3:55:32 PM
  */
-public class ResultsFrame extends JFrame {
+public class SearchResultsFrame extends JFrame {
 
-    private static final Logger logger = Logger.getLogger(ResultsFrame.class.getName());
+    private static final Logger logger = Logger.getLogger(SearchResultsFrame.class.getName());
 
-    private com.bc.appbase.ui.FileMenu fileMenu;
-    private javax.swing.JMenuBar menuBar;
+    private JMenuBar menuBar;
+    private FileMenu fileMenu;
+    
+    private JPanel topPanel;
+    private SearchPanel searchPanel;
     private JLabel searchResultsLabel;
-    private com.bc.appbase.ui.SearchResultsPanel searchResultsPanel;
+    
+    private SearchResultsPanel searchResultsPanel;
 
-    public ResultsFrame() throws HeadlessException {
+    public SearchResultsFrame() throws HeadlessException {
         this.initComponents();
     }
 
-    public ResultsFrame(GraphicsConfiguration gc) {
+    public SearchResultsFrame(GraphicsConfiguration gc) {
         super(gc);
         this.initComponents();
     }
 
-    public ResultsFrame(String title) throws HeadlessException {
+    public SearchResultsFrame(String title) throws HeadlessException {
         super(title);
         this.initComponents();
     }
 
-    public ResultsFrame(String title, GraphicsConfiguration gc) {
+    public SearchResultsFrame(String title, GraphicsConfiguration gc) {
         super(title, gc);
         this.initComponents();
     }
 
     private void initComponents() {
 
-        searchResultsLabel = new JLabel();
-        searchResultsPanel = new com.bc.appbase.ui.SearchResultsPanel();
-        menuBar = new JMenuBar();
-        fileMenu = new FileMenu();
-
         final Font font = new java.awt.Font("Tahoma", 0, 18); // NOI18N
-        searchResultsLabel.setFont(font);
-        searchResultsLabel.setText("You searched for: ");
 
+        menuBar = new JMenuBar();
+        
+        fileMenu = new FileMenu();
         fileMenu.setMnemonic('f');
         fileMenu.setText("File");
         fileMenu.setFont(font);
         fileMenu.setMenuItemsFont(font);
-
         menuBar.add(fileMenu);
 
         setJMenuBar(menuBar);
+        
+        searchPanel = new SearchPanel();
+        
+        searchResultsLabel = new JLabel();
+        searchResultsLabel.setFont(font);
+        searchResultsLabel.setText("You searched for: ");
+        
+        topPanel = new JPanel();
+        topPanel.setLayout(new GridLayout(2, 1));
+        topPanel.add(searchPanel);
+        topPanel.add(searchResultsLabel);
+        
+        searchResultsPanel = new SearchResultsPanel();
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -88,14 +102,14 @@ public class ResultsFrame extends JFrame {
                     .addComponent(searchResultsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 635, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(searchResultsLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                        .addComponent(topPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(searchResultsLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(topPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(searchResultsPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -103,24 +117,14 @@ public class ResultsFrame extends JFrame {
     }
     
     public void loadSearchResults(
-            UIContext uiContext, SearchContext searchContext, SearchResults searchResults, String KEY, 
-            Object msg, boolean emptyResultsAllowed, boolean fullScreen) throws HeadlessException {
+            SearchContext searchContext, SearchResults searchResults, 
+            String KEY, boolean emptyResultsAllowed) throws HeadlessException {
 
-        this.init(uiContext, msg.toString());
-        
-        this.pack();
-            
-        if(fullScreen) {
-            uiContext.positionFullScreen(this);
-        }else{
-            uiContext.positionHalfScreenRight(this);
-        }
-        
-        this.getSearchResultsPanel().loadSearchResultsUI(
-                uiContext, searchContext, searchResults, KEY, 0, 1, emptyResultsAllowed);
+        searchResultsPanel.load(
+                searchContext, searchResults, KEY, 0, 1, emptyResultsAllowed);
     }
     
-    public void init(UIContext uiContext, String message) {
+    public void init(UIContext uiContext, String message, boolean fullScreen) {
         
         logger.log(Level.FINE, "#createSearchResultsFrame(...) Message: {0}", message);
         
@@ -128,15 +132,25 @@ public class ResultsFrame extends JFrame {
         if(uiContext.getImageIcon() != null) {
             this.setIconImage(uiContext.getImageIcon().getImage());
         }
-
-        this.getSearchResultsLabel().setText(message);
-
-        final SearchResultsPanel resultsPanel = this.getSearchResultsPanel();
         
-        final JTable table = resultsPanel.getSearchResultsTable();
+        searchPanel.init(uiContext);
+
+        if(message != null) {
+            searchResultsLabel.setText(message);
+        }
+
+        final JTable table = searchResultsPanel.getSearchResultsTable();
         this.getFileMenu().addActionListenerToDefaultMenuItems(uiContext, table);
 
-        resultsPanel.init(uiContext);
+        searchResultsPanel.init(uiContext);
+
+        this.pack();
+            
+        if(fullScreen) {
+            uiContext.positionFullScreen(this);
+        }else{
+            uiContext.positionHalfScreenRight(this);
+        }
     }
 
     public FileMenu getFileMenu() {
@@ -153,5 +167,13 @@ public class ResultsFrame extends JFrame {
 
     public SearchResultsPanel getSearchResultsPanel() {
         return searchResultsPanel;
+    }
+
+    public JPanel getTopPanel() {
+        return topPanel;
+    }
+
+    public SearchPanel getSearchPanel() {
+        return searchPanel;
     }
 }

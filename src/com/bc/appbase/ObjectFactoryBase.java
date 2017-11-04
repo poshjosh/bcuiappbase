@@ -16,7 +16,7 @@
 
 package com.bc.appbase;
 
-import com.bc.appbase.ui.ComponentModel;
+import com.bc.appbase.ui.components.ComponentModel;
 import com.bc.appbase.ui.DateFromUIBuilder;
 import com.bc.appbase.ui.DateFromUIBuilderImpl;
 import com.bc.appbase.ui.DateUIUpdater;
@@ -27,11 +27,11 @@ import com.bc.appbase.ui.dialog.Popup;
 import com.bc.appbase.ui.builder.impl.UIBuilderFromEntityMap;
 import com.bc.appbase.ui.builder.FromUIBuilder;
 import com.bc.appbase.jpa.EntityFromMapBuilderDataFormatter;
-import com.bc.appbase.jpa.EntityStructureFactory;
-import com.bc.appbase.jpa.EntityStructureFactoryImpl;
-import com.bc.appbase.ui.ComponentModel.ComponentProperties;
-import com.bc.appbase.ui.ComponentModelWithTableAsEntityListUI;
-import com.bc.appbase.ui.ComponentPropertiesImpl;
+import com.bc.appcore.jpa.EntityStructureFactory;
+import com.bc.appcore.jpa.EntityStructureFactoryImpl;
+import com.bc.appbase.ui.components.ComponentModel.ComponentProperties;
+import com.bc.appbase.ui.components.ComponentModelWithTableAsEntityListUI;
+import com.bc.appbase.ui.components.ComponentPropertiesImpl;
 import com.bc.appbase.ui.UIContext;
 import com.bc.appbase.ui.builder.impl.MapFromUIBuilder;
 import com.bc.appbase.ui.builder.PromptUserSelectOrCreateNew;
@@ -45,9 +45,8 @@ import com.bc.appbase.ui.builder.ThirdComponentProvider;
 import com.bc.appbase.ui.builder.UIBuilder;
 import com.bc.appbase.ui.builder.UIBuilderFromEntity;
 import com.bc.appbase.ui.builder.UIBuilderFromMap;
-import com.bc.appbase.ui.builder.impl.DefaultFormEntryComponentModel;
+import com.bc.appbase.ui.components.DefaultFormEntryComponentModel;
 import com.bc.appbase.ui.builder.impl.ThirdComponentProviderImpl;
-import com.bc.appbase.ui.builder.impl.UIBuilderFromEntityImpl;
 import java.awt.Container;
 import java.util.Map;
 import com.bc.appbase.ui.builder.PromptUserCreateNew;
@@ -56,8 +55,16 @@ import com.bc.appbase.xls.impl.SheetProcessorContextImpl;
 import com.bc.appbase.xls.SheetProcessorContext;
 import com.bc.appcore.jpa.model.ColumnLabelProvider;
 import java.awt.Component;
-import com.bc.appbase.ui.builder.FormEntryComponentModel;
-import com.bc.appbase.ui.builder.FormEntryWithThreeColumnsComponentModel;
+import com.bc.appbase.ui.components.FormEntryComponentModel;
+import com.bc.appbase.ui.components.FormEntryWithThreeColumnsComponentModel;
+import com.bc.appbase.ui.builder.MatchEntries;
+import com.bc.appbase.ui.builder.impl.MatchEntriesImpl;
+import com.bc.appbase.ui.builder.impl.UIBuilderFromEntityImpl;
+import com.bc.appbase.ui.components.ComponentWalker;
+import com.bc.appbase.ui.components.ComponentWalkerImpl;
+import com.bc.appbase.ui.functions.AddAccessToViewRelatedTypes;
+import com.bc.appbase.ui.functions.AddAccessToViewRelatedTypesImpl;
+import com.bc.appcore.ResultHandler;
 import com.bc.appcore.parameter.ParameterExtractor;
 import com.bc.appcore.parameter.ParameterExtractorImpl;
 
@@ -70,7 +77,7 @@ public class ObjectFactoryBase extends com.bc.appcore.ObjectFactoryImpl {
     
     private final ComponentProperties componentProperties;
     
-    private final int width = 480;
+    private final int width = 360;//480;
     
     public ObjectFactoryBase(App app) {
         super(app);
@@ -97,10 +104,14 @@ public class ObjectFactoryBase extends com.bc.appcore.ObjectFactoryImpl {
     public <T> T doGetOrException(Class<T> type) throws Exception {
         Object output;
 
-        if(type.equals(EntityFromMapBuilder.Formatter.class)){
+        if(type.equals(ResultHandler.class)){
+
+            output = new ResultHandlerWithUserPrompt(this.getApp().getUIContext());
+            
+        }else if(type.equals(EntityFromMapBuilder.Formatter.class)){
 
             output = new EntityFromMapBuilderDataFormatter(
-                    this, this.getApp().getJpaContext(), 
+                    this, this.getApp().getActivePersistenceUnitContext(), 
                     this.getApp().getUIContext());
 
         }else if(type.equals(EntityStructureFactory.class)){
@@ -135,10 +146,14 @@ public class ObjectFactoryBase extends com.bc.appcore.ObjectFactoryImpl {
 
             output = this.dialogManager;
 
+        }else if(type.equals(ComponentWalker.class)){
+
+            output = new ComponentWalkerImpl();
+
         }else if(type.equals(FormEntryComponentModel.class)){
 
             output = new DefaultFormEntryComponentModel(
-                    this.getApp().getJpaContext(), 
+                    this.getApp().getActivePersistenceUnitContext(), 
                     this.getOrException(TypeProvider.class), 
                     this.getOrException(ComponentModel.class), width,
                     this.getOrException(ColumnLabelProvider.class), 
@@ -148,7 +163,7 @@ public class ObjectFactoryBase extends com.bc.appcore.ObjectFactoryImpl {
         }else if(type.equals(FormEntryWithThreeColumnsComponentModel.class)){
 
             output = new DefaultFormEntryComponentModel(
-                    this.getApp().getJpaContext(), 
+                    this.getApp().getActivePersistenceUnitContext(), 
                     this.getOrException(TypeProvider.class), 
                     this.getOrException(ComponentModel.class), width,
                     this.getOrException(ColumnLabelProvider.class), 
@@ -175,12 +190,22 @@ public class ObjectFactoryBase extends com.bc.appcore.ObjectFactoryImpl {
 
             output = new ThirdComponentProviderImpl(this.getApp().getUIContext(), this.getApp());
 
+        }else if(type.equals(MatchEntries.class)){
+            
+            output = new MatchEntriesImpl().app(this.getApp());
+            
         }else if(type.equals(UIBuilderFromEntity.class)){
-
+            
+//            final UIBuilderFromEntity uiBuilder = new UIBuilderFromEntityImpl2(
+//                    this.getOrException(BuildMap.class), new VerticalLayout()
+//            )
+//            final UIBuilderFromEntity uiBuilder = new UIBuilderFromEntityImpl2(
+//                    this.getOrException(BuildEntityStructure.class), new VerticalLayout()
+//            )
             final UIBuilderFromEntity uiBuilder = new UIBuilderFromEntityImpl()
                     .typeProvider(this.getOrException(TypeProvider.class))
                     .selectionContext(this.getOrException(SelectionContext.class))
-                    .entryUIProvider(this.getOrException(FormEntryComponentModel.class))
+                    .componentModel(this.getOrException(FormEntryComponentModel.class))
                     .app(this.getApp());
             output = uiBuilder;
 
@@ -189,8 +214,12 @@ public class ObjectFactoryBase extends com.bc.appcore.ObjectFactoryImpl {
             final UIBuilder<Map, Container> uiBuilder = new UIBuilderFromEntityMap()
                     .typeProvider(this.getOrException(TypeProvider.class))
                     .selectionContext(SelectionContext.NO_OP)
-                    .entryUIProvider(this.getOrException(FormEntryComponentModel.class));
+                    .componentModel(this.getOrException(FormEntryComponentModel.class));
             output = uiBuilder;
+
+        }else if(type.equals(AddAccessToViewRelatedTypes.class)){
+
+            output = new AddAccessToViewRelatedTypesImpl(this.getApp());
 
         }else if(type.equals(SheetProcessorContext.class)){
 

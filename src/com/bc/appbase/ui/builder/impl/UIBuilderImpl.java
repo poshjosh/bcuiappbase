@@ -18,44 +18,47 @@ package com.bc.appbase.ui.builder.impl;
 
 import com.bc.appbase.ui.SequentialLayout;
 import com.bc.appbase.ui.VerticalLayout;
+import com.bc.appbase.ui.builder.UIBuilder;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Font;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JComponent;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
-import com.bc.appbase.ui.builder.UIBuilderFromMap;
-import java.awt.Color;
 
 /**
- * @author Chinomso Bassey Ikwuagwu on May 27, 2017 12:34:03 PM
+ * @author Chinomso Bassey Ikwuagwu on Sep 8, 2017 12:28:40 PM
  */
-public class UIBuilderFromMapImpl extends AbstractUIBuilder<UIBuilderFromMap, Map> 
-        implements UIBuilderFromMap {
+public class UIBuilderImpl<T> extends AbstractUIBuilder<UIBuilder<T, Container>, T> 
+        implements UIBuilder<T, Container> {
     
     private int depth;
     
-    private static final Logger logger = Logger.getLogger(UIBuilderFromMapImpl.class.getName());
+    private static final Logger logger = Logger.getLogger(UIBuilderImpl.class.getName());
     
-    public UIBuilderFromMapImpl() {
-        this(new VerticalLayout());
-    }
+    private final BiFunction<Class, T, Map> toMap;
     
-    public UIBuilderFromMapImpl(SequentialLayout sequentialLayout) {
-        super(sequentialLayout);
+    private final SequentialLayout sequentialLayout;
+
+    public UIBuilderImpl(BiFunction<Class, T, Map> toMap, SequentialLayout sequentialLayout) {
+        this.toMap = Objects.requireNonNull(toMap);
+        this.sequentialLayout = Objects.requireNonNull(sequentialLayout);
     }
     
     @Override
-    public boolean build(Class sourceType, Map source, Container container) {
+    public boolean build(Class sourceType, T source, Container container) {
         
         logger.log(Level.FINE, "Building: {0}", sourceType);
         
@@ -71,7 +74,7 @@ public class UIBuilderFromMapImpl extends AbstractUIBuilder<UIBuilderFromMap, Ma
             
             final Collection<Component> components = this.getComponents(sourceType, source, container);
 
-            this.getSequentialLayout().addComponents(container, components);
+            this.sequentialLayout.addComponents(container, components);
             
             output = true;
         }
@@ -83,11 +86,26 @@ public class UIBuilderFromMapImpl extends AbstractUIBuilder<UIBuilderFromMap, Ma
         return true;
     }
     
-    public Collection<Component> getComponents(Class sourceType, Map source, Container parentContainer) {
+    public Map toMap(Class type, T instance) {
+        if(instance instanceof Map) {
+            return (Map)instance;
+        }else{
+            return toMap.apply(type, instance);
+        }
+    }
+    
+    public boolean isParent(Container parentContainer, Class sourceType, 
+            String name, Object value, Class valueType) {
+        return false;
+    }
+    
+    public Collection<Component> getComponents(Class sourceType, T source, Container parentContainer) {
         
         final List<Component> components = new ArrayList();
+        
+        final Map map = this.toMap(sourceType, source);
 
-        final Set entries = source.entrySet(); 
+        final Set entries = map.entrySet(); 
 
         for(Object oval : entries) {
 
@@ -97,13 +115,13 @@ public class UIBuilderFromMapImpl extends AbstractUIBuilder<UIBuilderFromMap, Ma
             final Object value = entry.getValue();
 
             final Class valueType = this.getTypeProvider().getType(sourceType, name, value, null);
-            Objects.requireNonNull(valueType, "Failed to resolve type of "+sourceType.getName()+"#"+name+" = "+value);
+            Objects.requireNonNull(valueType, "Failed to resolve type of "+sourceType.getName()+"#"+name+" = "+value+", using "+this.getTypeProvider().getClass().getName());
 
             if(logger.isLoggable(Level.FINER)) {
                 logger.log(Level.FINER, "{0}#{1} has type: {2}", new Object[]{sourceType.getName(), name, valueType});
             }
 
-            final Component entryUI = this.getEntryUI(parentContainer, sourceType, name, value, valueType, null);
+            final Component entryUI = this.getEntryUIMain(parentContainer, sourceType, name, value, valueType, null);
 
             if(entryUI != null) {
 
@@ -115,56 +133,62 @@ public class UIBuilderFromMapImpl extends AbstractUIBuilder<UIBuilderFromMap, Ma
         
         if(logger.isLoggable(Level.FINER)) {
             logger.log(Level.FINER, "Type: {0} keys: {1}, components: {2}", 
-                    new Object[]{sourceType.getName(), source.keySet(), components.size()});
+                    new Object[]{sourceType.getName(), map.keySet(), components.size()});
         }
         
         return components;
     }
     
-    public Component getEntryUI(Container parentContainer, Class sourceType, String name, Object value, Class valueType, Component outputIfNone) {
-//System.out.println(valueType.getSimpleName()+' '+name+'='+value+". @"+this.getClass());                
-        final Level level = Level.FINER;
+    public Component getEntryUIMain(Container parentContainer, Class sourceType, 
+            String name, Object value, Class valueType, Component outputIfNone) {
+
+        logger.finer(() -> MessageFormat.format("For {0}, {1} {2} = {3}", 
+                sourceType.getSimpleName(), valueType.getSimpleName(), name, value));
+        
+        final String type;
         
         final Component entryUI;
 
-        if(value instanceof Map) {
+        if(this.isParent(parentContainer, sourceType, name, value, valueType)) {
             
-            entryUI = this.getEntryUI(parentContainer, sourceType, name, (Map)value, valueType, outputIfNone);
+            type = "Container type";
+            
+            entryUI = this.getEntryUIForParent(parentContainer, sourceType, name, (T)value, valueType, outputIfNone);
 
         }else if(value instanceof Collection) {
+            
+            type = "Collection type";
             
             final Collection collection = (Collection)value;
             
             final boolean singleElement =  collection.size() < 2;
-//System.out.println("Single element: "+singleElement+", " + valueType.getSimpleName()+' '+name+'='+value+". @"+this.getClass());                     
+
             if(singleElement) { 
-                entryUI = this.getEntryUI(parentContainer, sourceType, 
+                
+                entryUI = this.getEntryUIForCollection(parentContainer, sourceType, 
                         name, collection, valueType, outputIfNone);
             }else{
                 entryUI = this.getComponentModel().getComponent(sourceType, valueType, name, value);
             }        
         }else{
 
-            if(logger.isLoggable(level)) {
-                logger.log(level, "Other type: {0}#{1}", new Object[]{sourceType.getName(), name});
-            }
+            type = "Instance type";
 
             entryUI = this.getComponentModel().getComponent(sourceType, valueType, name, value);
         }
         
+        logger.finer(() -> MessageFormat.format("{0} for {1}, {2} {3} = {4}", 
+                type, sourceType.getSimpleName(), valueType.getSimpleName(), name, value));
+        
         return entryUI == null ? outputIfNone : entryUI;
     }
     
-    public Component getEntryUI(Container parentContainer, Class sourceType, 
-            String name, Map child, Class valueType, Component outputIfNone) {
+    public Component getEntryUIForParent(Container parentContainer, Class sourceType, 
+            String name, T child, Class valueType, Component outputIfNone) {
         
         final Level level = Level.FINER;
         
         final Component entryUI;
-
-        if(logger.isLoggable(level)) {
-            logger.log(level, "Map type: {0}#{1}", new Object[]{sourceType.getName(), name});
-        }
 
         if(!this.accept(valueType)) {
 
@@ -194,7 +218,7 @@ public class UIBuilderFromMapImpl extends AbstractUIBuilder<UIBuilderFromMap, Ma
 
             }else{
 
-                throw new UnsupportedOperationException("Failed to build ui for type "+valueType+", with data keys: "+child.keySet());
+                throw new UnsupportedOperationException("Failed to build ui for type "+valueType+", with data names: "+toMap(valueType, child).keySet());
             }
 
             --depth;
@@ -203,7 +227,7 @@ public class UIBuilderFromMapImpl extends AbstractUIBuilder<UIBuilderFromMap, Ma
         return entryUI == null ? outputIfNone : entryUI;
     }
 
-    public Component getEntryUI(Container parentContainer, Class sourceType, 
+    public Component getEntryUIForCollection(Container parentContainer, Class sourceType, 
             String name, Collection value, Class valueType, Component outputIfNone) {
         
         final Level level = Level.FINER;
@@ -235,7 +259,7 @@ public class UIBuilderFromMapImpl extends AbstractUIBuilder<UIBuilderFromMap, Ma
 
             for(Object e : collection) {
 
-                final Component c = this.getEntryUI(parentContainer, valueType, genericName, e, collectionGenericType, null);
+                final Component c = this.getEntryUIMain(parentContainer, valueType, genericName, e, collectionGenericType, null);
 
                 if(c != null) {
                     components.add(c);

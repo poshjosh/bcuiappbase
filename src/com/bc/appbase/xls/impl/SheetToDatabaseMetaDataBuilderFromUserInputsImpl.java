@@ -25,7 +25,6 @@ import com.bc.appbase.xls.SheetToDatabaseMetaData;
 import com.bc.appbase.xls.SheetToDatabaseMetaDataBuilderFromUserInputs;
 import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.parameter.ParameterException;
-import com.bc.appcore.predicates.AcceptAll;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.util.Collections;
@@ -64,7 +63,7 @@ public class SheetToDatabaseMetaDataBuilderFromUserInputsImpl
         
         final SheetToDatabaseMetaData output;
         
-        final Class entityType = this.promptSelectEntityType(new AcceptAll());
+        final Class entityType = this.promptSelectEntityType((cls) -> true);
         
         if(entityType == null) {
             
@@ -175,8 +174,7 @@ public class SheetToDatabaseMetaDataBuilderFromUserInputsImpl
     }
     
     public Set<Class> getOptions(Predicate<Class> test) {
-        final Set<String> puNames = app.getPersistenceUnitNames();
-        final Set<Class> entityTypes = app.getJpaContext().getMetaData().getEntityClasses(puNames);
+        final Set<Class> entityTypes = app.getActivePersistenceUnitContext().getMetaData().getEntityClasses();
         final Set<Class> options = new LinkedHashSet();
         entityTypes.stream().filter(test).forEach((cls) -> options.add(cls));
         return options;

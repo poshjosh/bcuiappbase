@@ -20,17 +20,22 @@ import com.bc.appbase.ui.SearchResultsPanel;
 import java.util.Map;
 import com.bc.appbase.App;
 import com.bc.appbase.ui.MainFrame;
+import com.bc.appcore.exceptions.TaskExecutionException;
 import com.bc.appcore.jpa.SearchContext;
+import com.bc.appcore.parameter.ParameterExtractor;
 import com.bc.jpa.search.SearchResults;
+import java.util.Collections;
+import java.util.Set;
 import javax.swing.JFrame;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Mar 24, 2017 10:38:08 AM
  */
-public class ReloadMainResults extends RefreshResults {
+public class RefreshMainResults extends RefreshResults {
 
     @Override
-    public Boolean execute(App app, Map<String, Object> params) {
+    public Boolean execute(App app, Map<String, Object> params) 
+            throws TaskExecutionException {
         
         final JFrame frame = app.getUIContext().getMainFrame();
         
@@ -38,13 +43,14 @@ public class ReloadMainResults extends RefreshResults {
             
             final SearchResultsPanel resultsPanel = ((MainFrame)frame).getSearchResultsPanel();
             
-            final Class entityType = null;
-
-            final SearchContext searchContext = app.getSearchContext(entityType);
-
-            final SearchResults searchResults = searchContext.getSearchResults();
+            final SearchContext searchContext = resultsPanel.getSearchContext();
             
-            this.execute(app, resultsPanel, searchContext, searchResults);
+            final SearchResults searchResults = searchContext.searchAll();
+
+            final Set toRefresh = app.getOrException(ParameterExtractor.class)
+                    .getFirstValue(params, Set.class, Collections.EMPTY_SET);
+            
+            this.execute(app, resultsPanel, searchResults, toRefresh);
             
             return Boolean.TRUE;
             

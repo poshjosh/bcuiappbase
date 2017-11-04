@@ -46,7 +46,7 @@ public class JdbcPropertiesProviderImpl implements JdbcPropertiesProvider {
 
     public JdbcPropertiesProviderImpl(AppContext appContext, boolean displayPromptAtLeaseOnce) {
         this(
-                appContext.getJpaContext().getPersistenceConfigURI(), 
+                appContext.getPersistenceContext().getPersistenceConfigURI(), 
                 new GetPropertiesFileForPersistenceUnit(appContext), 
                 appContext.getMasterPersistenceUnitTest(),
                 displayPromptAtLeaseOnce);

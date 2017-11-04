@@ -19,8 +19,7 @@ package com.bc.appbase.ui.table;
 import com.bc.appbase.App;
 import com.bc.appbase.ui.FrameForTable;
 import com.bc.appbase.ui.UIContext;
-import com.bc.appcore.table.model.EntityTableModel;
-import com.bc.appcore.jpa.model.ResultModel;
+import com.bc.appcore.table.model.EntityTableModelImpl;
 import com.bc.appcore.util.RelationAccess;
 import com.bc.jpa.paging.PaginatedList;
 import com.bc.jpa.search.SearchResults;
@@ -38,7 +37,7 @@ import javax.swing.JFrame;
 import javax.swing.JTable;
 import javax.swing.table.TableModel;
 import com.bc.appcore.table.model.XYCountTableMetaData;
-import com.bc.appcore.predicates.AcceptAll;
+import com.bc.appcore.jpa.model.EntityResultModel;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Jun 7, 2017 5:46:30 PM
@@ -154,9 +153,9 @@ public class XYCountTableCellSelectionHandler implements TableCellSelectionHandl
 
             final List resultList = this.find(this.tableMetaData.getSearchResults(), colTest.and(rowTest));
 
-            final ResultModel resultModel = tableMetaData.getResultModel();
+            final EntityResultModel resultModel = tableMetaData.getResultModel();
             
-            final TableModel tableModel = new EntityTableModel(resultList, resultModel);
+            final TableModel tableModel = new EntityTableModelImpl(resultList, resultModel);
             final JTable resultsTable = new JTable(tableModel);
             
             final FrameForTable frame = new FrameForTable(tableModel.getRowCount() + " results");
@@ -183,7 +182,7 @@ public class XYCountTableCellSelectionHandler implements TableCellSelectionHandl
     
     public Predicate getTest(Class entityType) {
         
-        return new AcceptAll();
+        return (val) -> true;
     }
     
     public Predicate getTest(Class entityType, List axisValues, int index) {

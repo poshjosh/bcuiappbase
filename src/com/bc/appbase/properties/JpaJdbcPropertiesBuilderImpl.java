@@ -21,10 +21,10 @@ import com.bc.appcore.functions.GetPropertiesFileForPersistenceUnit;
 import com.bc.appcore.properties.JdbcNameToLabel;
 import com.bc.appcore.properties.JpaJdbcProperties;
 import com.bc.appcore.properties.JpaJdbcPropertiesWithoutAuthentication;
-import com.bc.jpa.JpaContext;
 import com.bc.jpa.dom.PersistenceDOMImpl;
 import java.net.URI;
 import com.bc.appcore.properties.PropertiesContext;
+import com.bc.jpa.context.PersistenceContext;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Aug 19, 2017 10:32:58 PM
@@ -36,10 +36,10 @@ public class JpaJdbcPropertiesBuilderImpl extends PropertiesBuilderImpl
     }
     
     public JpaJdbcPropertiesBuilderImpl(AppContext app, String persistenceUnit) {
-        final JpaContext jpa = app.getJpaContext();
+        final PersistenceContext jpa = app.getPersistenceContext();
         this.defaultValues(jpa.getPersistenceConfigURI(), persistenceUnit)
                 .optionsProvider("Properties for Persistence Unit: " + persistenceUnit)
-                .sourceFile(app.getPropertiesPaths(), persistenceUnit)
+                .sourceFile(app.getPropertiesContext(), persistenceUnit)
                 .authenticationRequired(app.getMasterPersistenceUnitTest().test(persistenceUnit));
     }
     

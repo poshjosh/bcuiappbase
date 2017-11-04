@@ -24,18 +24,20 @@ import com.bc.appcore.content.StackTraceTextContent;
 import java.awt.Dimension;
 import java.awt.HeadlessException;
 import java.io.IOException;
-import javax.swing.JFrame;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on May 5, 2017 2:23:26 PM
  */
 public class ViewDetailsAction implements PopupImpl.OptionAction<Boolean>{
+    
     private final UIContext uiContext;
     private final String title;
+    
     public ViewDetailsAction(UIContext uiContext, String title) { 
         this.uiContext = uiContext; 
         this.title = title;
     }
+    
     @Override
     public Boolean execute(Object message, Throwable t) {
         
@@ -44,8 +46,10 @@ public class ViewDetailsAction implements PopupImpl.OptionAction<Boolean>{
         
         try{
             
-            final JFrame frame = new JEditorPaneFrame(uiContext, 
-                    content.getContentType(), content.getContent(), null, this.title);
+            final JEditorPaneFrame frame = new JEditorPaneFrame(
+                    uiContext, content.getContentType(), this.title);
+            
+            frame.setText(content.getContent());
             
             frame.setPreferredSize(new Dimension(500, 400));
             

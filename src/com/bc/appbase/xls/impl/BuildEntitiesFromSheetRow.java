@@ -16,10 +16,9 @@
 
 package com.bc.appbase.xls.impl;
 
-import com.bc.appbase.jpa.EntityStructureFactory;
+import com.bc.appcore.jpa.EntityStructureFactory;
 import com.bc.appbase.xls.CellResult;
 import com.bc.appcore.ObjectFactory;
-import com.bc.jpa.JpaContext;
 import com.bc.util.JsonFormat;
 import java.util.List;
 import java.util.Map;
@@ -37,13 +36,11 @@ public class BuildEntitiesFromSheetRow implements Function<List<CellResult>, Lis
     private static final Logger logger = Logger.getLogger(BuildEntitiesFromSheetRow.class.getName());
     
     private final ObjectFactory objectFactory;
-    private final JpaContext jpaContext;
     private final Class entityType;
     private final EntityStructureFactory entityStructureFactory;
     
-    public BuildEntitiesFromSheetRow(ObjectFactory objectFactory, JpaContext jpaContext, Class entityType) {
+    public BuildEntitiesFromSheetRow(ObjectFactory objectFactory, Class entityType) {
         this.objectFactory = Objects.requireNonNull(objectFactory);
-        this.jpaContext = Objects.requireNonNull(jpaContext);
         this.entityType = Objects.requireNonNull(entityType);
         this.entityStructureFactory = objectFactory.getOrException(EntityStructureFactory.class);
     }
@@ -103,9 +100,5 @@ public class BuildEntitiesFromSheetRow implements Function<List<CellResult>, Lis
 
     public ObjectFactory getObjectFactory() {
         return objectFactory;
-    }
-
-    public JpaContext getJpaContext() {
-        return jpaContext;
     }
 }

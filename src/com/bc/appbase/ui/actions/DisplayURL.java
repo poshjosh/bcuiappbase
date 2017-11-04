@@ -27,7 +27,6 @@ import com.bc.appcore.parameter.ParameterNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
-import javax.swing.JFrame;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Apr 15, 2017 3:47:45 PM
@@ -47,9 +46,13 @@ public class DisplayURL implements Action<App, Boolean> {
         
         try{
             
-            final JFrame frame = new JEditorPaneFrame(app.getUIContext(), contentType, null, url, title);
+            final JEditorPaneFrame frame = new JEditorPaneFrame(app.getUIContext(), contentType, title);
             
-            app.getUIContext().positionHalfScreenRight(frame);
+            frame.addDefaultHyperlinkListener();
+            
+            frame.setPage(url);
+            
+            app.getUIContext().positionHalfScreenRight(frame.getScrollPane());
             
             frame.pack();
             frame.setVisible(true);

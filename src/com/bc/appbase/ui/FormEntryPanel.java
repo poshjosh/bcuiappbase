@@ -28,7 +28,7 @@ import javax.swing.SwingConstants;
 /**
  * @author Chinomso Bassey Ikwuagwu on Mar 26, 2017 10:13:16 PM
  */
-public class FormEntryPanel<C extends Component> extends javax.swing.JPanel {
+public class FormEntryPanel extends javax.swing.JPanel {
 
     private final int labelWidth;
     private final int labelHeight;
@@ -38,29 +38,29 @@ public class FormEntryPanel<C extends Component> extends javax.swing.JPanel {
     private final String fontName;
     
     private final JLabel label;
-    private final C entryComponent;
+    private final Component entryComponent;
     private final Component thirdComponent;
     
-    private JScrollPane entryComponentScrollPane;
+    private final JScrollPane entryComponentScrollPane;
     
     public FormEntryPanel(int labelWidth, 
-            Class<C> componentType, int componentWidth, int componentHeight, String fontName, Component thirdComponent) {
+            Class componentType, int componentWidth, int componentHeight, String fontName, Component thirdComponent) {
         this(JLabel.class, labelWidth, componentHeight, componentType, componentWidth, componentHeight, fontName, thirdComponent);
     }
     
     public FormEntryPanel(Class<JLabel> labelType, int labelWidth, int labelHeight, 
-            Class<C> componentType, int componentWidth, int componentHeight, String fontName, Component thirdComponent) {
+            Class componentType, int componentWidth, int componentHeight, String fontName, Component thirdComponent) {
         this(getComponent(labelType), labelWidth, labelHeight, 
-                getComponent(componentType), componentWidth, componentHeight, fontName, thirdComponent);
+                (Component)getComponent(componentType), componentWidth, componentHeight, fontName, thirdComponent);
     }
     
     public FormEntryPanel(int labelWidth, 
-            C component, int componentWidth, int componentHeight, String fontName, Component thirdComponent) {
+            Component component, int componentWidth, int componentHeight, String fontName, Component thirdComponent) {
         this(new JLabel(), labelWidth, componentHeight, component, componentWidth, componentHeight, fontName, thirdComponent);
     }
     
     public FormEntryPanel(JLabel label, int labelWidth, int labelHeight, 
-            C component, int componentWidth, int componentHeight, String fontName, Component thirdComponent) {
+            Component component, int componentWidth, int componentHeight, String fontName, Component thirdComponent) {
         this.labelWidth = labelWidth;
         this.labelHeight = labelHeight;
         this.entryComponentWidth = componentWidth;
@@ -68,7 +68,14 @@ public class FormEntryPanel<C extends Component> extends javax.swing.JPanel {
         this.fontSize = deriveFontSize(labelHeight);
         this.fontName = fontName;
         this.label = Objects.requireNonNull(label);
-        this.entryComponent = Objects.requireNonNull(component);
+        Objects.requireNonNull(component);
+        if(component instanceof JScrollPane) {
+            this.entryComponentScrollPane = (JScrollPane)component;
+            this.entryComponent = this.entryComponentScrollPane.getViewport().getView();
+        }else{
+            this.entryComponentScrollPane = null;
+            this.entryComponent = component;
+        }
         this.thirdComponent = thirdComponent;
     }
     
@@ -87,7 +94,7 @@ public class FormEntryPanel<C extends Component> extends javax.swing.JPanel {
     
     public void format(JLabel label) { }
     
-    public void format(C component) { }
+    public void format(Component component) { }
 
     @SuppressWarnings("unchecked")
     public void initComponents() {
@@ -104,8 +111,8 @@ public class FormEntryPanel<C extends Component> extends javax.swing.JPanel {
 
         final Component toAdd;
         if(this.entryComponentScrollPane != null) {
-            this.entryComponentScrollPane.setViewportView(this.entryComponent);
             toAdd = this.entryComponentScrollPane;
+            this.entryComponentScrollPane.setPreferredSize(this.entryComponent.getPreferredSize());
         }else{
             toAdd = this.entryComponent;
         }
@@ -142,15 +149,11 @@ public class FormEntryPanel<C extends Component> extends javax.swing.JPanel {
         return label;
     }
 
-    public C getEntryComponent() {
+    public Component getEntryComponent() {
         return entryComponent;
     }
 
     public JScrollPane getEntryComponentScrollPane() {
         return entryComponentScrollPane;
-    }
-
-    public void setEntryComponentScrollPane(JScrollPane entryComponentScrollPane) {
-        this.entryComponentScrollPane = entryComponentScrollPane;
     }
 }

@@ -28,8 +28,8 @@ import javax.swing.JTable;
 import javax.swing.table.TableModel;
 import com.bc.appbase.App;
 import com.bc.appcore.exceptions.TaskExecutionException;
-import com.bc.appcore.jpa.model.ResultModel;
 import com.bc.appcore.parameter.ParameterException;
+import com.bc.appcore.jpa.model.EntityResultModel;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Feb 13, 2017 9:05:28 AM
@@ -65,7 +65,7 @@ public class SaveTableAs implements Action<App, File> {
         file = new File(FileUtil.convertToExtension(file.getPath(), "xls"));
         
         params = new HashMap(params);
-        params.put(ResultModel.class.getName(), app.getSearchContext(null).getResultModel());
+        params.put(EntityResultModel.class.getName(), app.getSearchContext(null).getResultModel());
         
         final TableModel tableModel = (TableModel)app.getAction(
                 ActionCommands.PROMPT_SELECT_ROWS_AS_TABLE_MODEL).execute(app, params);
